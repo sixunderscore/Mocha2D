@@ -126,7 +126,7 @@ public class RenderHelper implements AutoCloseable {
         this.imageBarriers.get(1).image(swapChain.getImage(imageIndex));
         VK14.vkCmdPipelineBarrier2(graphicsCommandBuffer, this.barrierDependencyInfo);
 
-        VK14.vkCmdPushConstants(graphicsCommandBuffer, pipeline.getLayout(), VK14.VK_SHADER_STAGE_VERTEX_BIT, 0, camera.getProjectionViewBuffer());
+        VK14.vkCmdPushConstants(graphicsCommandBuffer, pipeline.getLayout(), VK14.VK_SHADER_STAGE_VERTEX_BIT, 0, camera.getBuffer());
 
         this.colorAttachments.get(0).imageView(swapChain.getImageView(imageIndex));
         this.renderingInfo.renderArea(viewportScissor.getScissor().get(0));
