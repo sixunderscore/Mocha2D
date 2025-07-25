@@ -1,0 +1,23 @@
+package net.sixunderscore.mocha2d.graphics.text;
+
+public enum FontBitmapResolution {
+    NORMAL(64, 580),
+    LARGE(128, 1160),
+    LARGEST(256, 2320);
+
+    private final int charResolution;
+    private final int atlasSideSize;
+
+    FontBitmapResolution(int charResolution, int atlasSideSize) {
+        this.charResolution = charResolution;
+        this.atlasSideSize = atlasSideSize;
+    }
+
+    public int getCharResolution() {
+        return this.charResolution;
+    }
+
+    public int getAtlasSideSize() {
+        return this.atlasSideSize;
+    }
+}
