@@ -92,7 +92,7 @@ public class SwapChain implements AutoCloseable {
 
         LongBuffer swapChainBuff = stack.mallocLong(1);
         if (KHRSwapchain.vkCreateSwapchainKHR(VulkanManager.getLogicalDevice(), swapChainCreateInfo, null, swapChainBuff) != VK14.VK_SUCCESS) {
-            throw new IllegalStateException("Unable to create SwapChain");
+            throw new IllegalStateException("Failed to create SwapChain");
         }
 
         return swapChainBuff.get(0);
@@ -124,19 +124,19 @@ public class SwapChain implements AutoCloseable {
                 .baseArrayLayer(0)
                 .layerCount(1);
 
+        VkImageViewCreateInfo imageViewCreateInfo = VkImageViewCreateInfo.calloc(stack)
+                .sType$Default()
+                .viewType(VK14.VK_IMAGE_VIEW_TYPE_2D)
+                .format(this.imageFormat)
+                .components(componentMapping)
+                .subresourceRange(subresourceRange);
+
         LongBuffer imageViewBuff = stack.mallocLong(1);
 
         for (int i = 0; i < this.imageCount; ++i) {
-            VkImageViewCreateInfo imageViewCreateInfo = VkImageViewCreateInfo.calloc(stack)
-                    .sType$Default()
-                    .image(this.images[i])
-                    .viewType(VK14.VK_IMAGE_VIEW_TYPE_2D)
-                    .format(this.imageFormat)
-                    .components(componentMapping)
-                    .subresourceRange(subresourceRange);
-
+            imageViewCreateInfo.image(this.images[i]);
             if (VK14.vkCreateImageView(VulkanManager.getLogicalDevice(), imageViewCreateInfo, null, imageViewBuff) != VK14.VK_SUCCESS) {
-                throw new IllegalStateException("Failed to create image view");
+                throw new IllegalStateException("Failed to create SwapChain image view");
             }
 
             imageViews[i] = imageViewBuff.get(0);
