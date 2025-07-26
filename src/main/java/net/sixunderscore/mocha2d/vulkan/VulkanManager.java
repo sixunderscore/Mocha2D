@@ -32,8 +32,8 @@ public class VulkanManager {
     private static VkInstance createInstance(MemoryStack stack, boolean enabledDebugValidation) {
         VkApplicationInfo applicationInfo = VkApplicationInfo.calloc(stack)
                 .sType$Default()
-                .pApplicationName(stack.UTF8("MochaVk"))
-                .pEngineName(stack.UTF8("MochaVk"))
+                .pApplicationName(stack.UTF8("Mocha2D"))
+                .pEngineName(stack.UTF8("Mocha2D"))
                 .apiVersion(VK.getInstanceVersionSupported());
 
         PointerBuffer glfwExtensions = GLFWVulkan.glfwGetRequiredInstanceExtensions();

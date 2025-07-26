@@ -14,17 +14,17 @@ import java.nio.IntBuffer;
 import java.nio.LongBuffer;
 
 public class RenderHelper implements AutoCloseable {
-    private final VkCommandBufferBeginInfo cmdBufferBeginInfo = VkCommandBufferBeginInfo.calloc();
-    private final VkBufferCopy.Buffer bufferCopy = VkBufferCopy.calloc(1);
-    private final VkRenderingAttachmentInfo.Buffer colorAttachments = VkRenderingAttachmentInfo.calloc(1);
-    private final VkRenderingInfo renderingInfo = VkRenderingInfo.calloc();
-    private final VkImageMemoryBarrier2.Buffer imageBarriers = VkImageMemoryBarrier2.calloc(2);
-    private final VkDependencyInfo barrierDependencyInfo = VkDependencyInfo.calloc();
-    private final VkSemaphoreSubmitInfo.Buffer waitSemaphoreSubmitInfo = VkSemaphoreSubmitInfo.calloc(1);
-    private final VkSemaphoreSubmitInfo.Buffer signalSemaphoreSubmitInfo = VkSemaphoreSubmitInfo.calloc(1);
-    private final VkCommandBufferSubmitInfo.Buffer cmdBufferSubmitInfo = VkCommandBufferSubmitInfo.calloc(1);
-    private final VkSubmitInfo2.Buffer submitInfo = VkSubmitInfo2.calloc(1);
-    private final VkPresentInfoKHR presentInfo = VkPresentInfoKHR.calloc();
+    private final VkCommandBufferBeginInfo cmdBufferBeginInfo;
+    private final VkBufferCopy.Buffer bufferCopy;
+    private final VkRenderingAttachmentInfo.Buffer colorAttachments;
+    private final VkRenderingInfo renderingInfo;
+    private final VkImageMemoryBarrier2.Buffer imageBarriers;
+    private final VkDependencyInfo barrierDependencyInfo;
+    private final VkSemaphoreSubmitInfo.Buffer waitSemaphoreSubmitInfo;
+    private final VkSemaphoreSubmitInfo.Buffer signalSemaphoreSubmitInfo;
+    private final VkCommandBufferSubmitInfo.Buffer cmdBufferSubmitInfo;
+    private final VkSubmitInfo2.Buffer submitInfo;
+    private final VkPresentInfoKHR presentInfo;
 
     private final LongBuffer vertexBufferHandleBuffer;
     private final LongBuffer vertexBufferOffsetBuffer;
@@ -33,10 +33,13 @@ public class RenderHelper implements AutoCloseable {
     private final LongBuffer descriptorSetHandleBuffer;
 
     public RenderHelper(TextureManager textureManager, GpuBuffer vertexBuffer) {
-        this.cmdBufferBeginInfo
+        this.cmdBufferBeginInfo = VkCommandBufferBeginInfo.calloc()
                 .sType$Default()
                 .flags(VK14.VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
+        this.bufferCopy = VkBufferCopy.calloc(1);
+
+        this.colorAttachments = VkRenderingAttachmentInfo.calloc(1);
         this.colorAttachments.get(0)
                 .sType$Default()
                 .imageLayout(VK14.VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
@@ -44,11 +47,12 @@ public class RenderHelper implements AutoCloseable {
                 .storeOp(VK14.VK_ATTACHMENT_STORE_OP_STORE)
                 .clearValue(VkClearValue.calloc());
 
-        this.renderingInfo
+        this.renderingInfo = VkRenderingInfo.calloc()
                 .sType$Default()
                 .layerCount(1)
                 .pColorAttachments(this.colorAttachments);
 
+        this.imageBarriers = VkImageMemoryBarrier2.calloc(2);
         this.imageBarriers.get(0)
                 .sType$Default()
                 .srcStageMask(VK14.VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT)
@@ -73,28 +77,32 @@ public class RenderHelper implements AutoCloseable {
                 .dstQueueFamilyIndex(VK14.VK_QUEUE_FAMILY_IGNORED)
                 .subresourceRange(s -> s.set(VK14.VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1));
 
-        this.barrierDependencyInfo
+        this.barrierDependencyInfo = VkDependencyInfo.calloc()
                 .sType$Default()
                 .pImageMemoryBarriers(this.imageBarriers);
 
+        this.waitSemaphoreSubmitInfo = VkSemaphoreSubmitInfo.calloc(1);
         this.waitSemaphoreSubmitInfo.get(0)
                 .sType$Default()
                 .stageMask(VK14.VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT);
 
+        this.signalSemaphoreSubmitInfo = VkSemaphoreSubmitInfo.calloc(1);
         this.signalSemaphoreSubmitInfo.get(0)
                 .sType$Default()
                 .stageMask(VK14.VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT);
 
+        this.cmdBufferSubmitInfo = VkCommandBufferSubmitInfo.calloc(1);
         this.cmdBufferSubmitInfo.get(0)
                 .sType$Default();
 
+        this.submitInfo = VkSubmitInfo2.calloc(1);
         this.submitInfo.get(0)
                 .sType$Default()
                 .pWaitSemaphoreInfos(this.waitSemaphoreSubmitInfo)
                 .pSignalSemaphoreInfos(this.signalSemaphoreSubmitInfo)
                 .pCommandBufferInfos(this.cmdBufferSubmitInfo);
 
-        this.presentInfo
+        this.presentInfo = VkPresentInfoKHR.calloc()
                 .sType$Default()
                 .swapchainCount(1);
 
