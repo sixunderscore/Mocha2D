@@ -16,6 +16,7 @@ import java.nio.LongBuffer;
 public class RenderHelper implements AutoCloseable {
     private final VkCommandBufferBeginInfo cmdBufferBeginInfo;
     private final VkBufferCopy.Buffer bufferCopy;
+    private final VkClearValue clearValue;
     private final VkRenderingAttachmentInfo.Buffer colorAttachments;
     private final VkRenderingInfo renderingInfo;
     private final VkImageMemoryBarrier2.Buffer imageBarriers;
@@ -39,13 +40,21 @@ public class RenderHelper implements AutoCloseable {
 
         this.bufferCopy = VkBufferCopy.calloc(1);
 
+        this.clearValue = VkClearValue.calloc()
+                .color(color -> color
+                        .float32(0, 0)
+                        .float32(1, 0)
+                        .float32(2, 0)
+                        .float32(3, 0)
+                );
+
         this.colorAttachments = VkRenderingAttachmentInfo.calloc(1);
         this.colorAttachments.get(0)
                 .sType$Default()
                 .imageLayout(VK14.VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
                 .loadOp(VK14.VK_ATTACHMENT_LOAD_OP_CLEAR)
                 .storeOp(VK14.VK_ATTACHMENT_STORE_OP_STORE)
-                .clearValue(VkClearValue.calloc());
+                .clearValue(this.clearValue);
 
         this.renderingInfo = VkRenderingInfo.calloc()
                 .sType$Default()
@@ -172,16 +181,17 @@ public class RenderHelper implements AutoCloseable {
 
     @Override
     public void close() {
-        this.cmdBufferBeginInfo.free();
-        this.bufferCopy.free();
-        this.imageBarriers.free();
-        this.barrierDependencyInfo.free();
-        this.colorAttachments.free();
-        this.renderingInfo.free();
-        this.waitSemaphoreSubmitInfo.free();
-        this.signalSemaphoreSubmitInfo.free();
-        this.cmdBufferSubmitInfo.free();
-        this.submitInfo.free();
+        this.cmdBufferBeginInfo.close();
+        this.bufferCopy.close();
+        this.imageBarriers.close();
+        this.barrierDependencyInfo.close();
+        this.clearValue.close();
+        this.colorAttachments.close();
+        this.renderingInfo.close();
+        this.waitSemaphoreSubmitInfo.close();
+        this.signalSemaphoreSubmitInfo.close();
+        this.cmdBufferSubmitInfo.close();
+        this.submitInfo.close();
 
         MemoryUtil.memFree(this.vertexBufferHandleBuffer);
         MemoryUtil.memFree(this.vertexBufferOffsetBuffer);

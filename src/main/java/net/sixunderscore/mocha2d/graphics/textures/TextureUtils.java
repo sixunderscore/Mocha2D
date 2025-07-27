@@ -1,6 +1,6 @@
 package net.sixunderscore.mocha2d.graphics.textures;
 
-import net.sixunderscore.mocha2d.graphics.text.FontColor;
+import net.sixunderscore.mocha2d.util.Color;
 import net.sixunderscore.mocha2d.vulkan.util.GpuBuffer;
 import org.lwjgl.stb.STBImage;
 import org.lwjgl.system.MemoryStack;
@@ -25,7 +25,7 @@ public class TextureUtils {
         return new TextureData(imageData, width[0], height[0]);
     }
 
-    public static TextureData convertGrayscaleToRGBA(ByteBuffer grayscaleImage, int grayscaleSideSize, int grayscaleTotalSize, FontColor color) {
+    public static TextureData convertGrayscaleToRGBA(ByteBuffer grayscaleImage, int grayscaleSideSize, int grayscaleTotalSize, Color color) {
         ByteBuffer rgbaBuffer = MemoryUtil.memAlloc(grayscaleTotalSize * 4);
 
         for (int i = 0; i < grayscaleTotalSize; ++i) {
