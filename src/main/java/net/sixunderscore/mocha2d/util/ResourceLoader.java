@@ -1,6 +1,6 @@
 package net.sixunderscore.mocha2d.util;
 
-import org.lwjgl.BufferUtils;
+import org.lwjgl.system.MemoryUtil;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -13,7 +13,7 @@ public class ResourceLoader {
                 throw new IllegalStateException("File " + path + " not found");
             }
 
-            return BufferUtils.createByteBuffer(stream.available()).put(stream.readAllBytes()).flip();
+            return MemoryUtil.memAlloc(stream.available()).put(stream.readAllBytes()).flip();
         } catch (IOException e) {
             throw new RuntimeException("Failed to load file: " + path + ": " + e);
         }

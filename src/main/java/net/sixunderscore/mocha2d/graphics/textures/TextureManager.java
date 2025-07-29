@@ -196,7 +196,7 @@ public class TextureManager implements AutoCloseable {
     }
 
     private TextureAtlas createTextureAtlas(MemoryStack stack, VkCommandBuffer cmdBuffer, TextureFile file, int textureIndex, List<GpuBuffer> stagingBuffersToFree) {
-        try (TextureData textureData = TextureUtils.decodeImage(ResourceLoader.loadRawFile(file.path()))) {
+        try (TextureData textureData = TextureUtils.loadAndDecodeImage(file.path())) {
             TextureAtlas atlas = new TextureAtlas(textureData.width(), textureData.height(), file.isPixelated(), textureIndex);
             GpuBuffer stagingImageBuffer = TextureUtils.createStagingImageBuffer(stack, textureData);
 
@@ -210,7 +210,7 @@ public class TextureManager implements AutoCloseable {
     }
 
     private TextRenderer createTextRenderer(MemoryStack stack, VkCommandBuffer cmdBuffer, TtfFile file, int textureIndex, List<GpuBuffer> stagingBuffersToFree) {
-        STBTTFontinfo fontInfo = STBTTFontinfo.create();
+        STBTTFontinfo fontInfo = STBTTFontinfo.malloc(stack);
         ByteBuffer ttfFileData = ResourceLoader.loadRawFile(file.path());
 
         if (!STBTruetype.stbtt_InitFont(fontInfo, ttfFileData)) {
@@ -225,8 +225,9 @@ public class TextureManager implements AutoCloseable {
 
         // Use STB to generate a grayscale font atlas
         ByteBuffer grayscaleImageBuffer = MemoryUtil.memAlloc(grayscaleTotalSize);
-        STBTTBakedChar.Buffer charData = STBTTBakedChar.create(TextData.NUM_CHARS);
+        STBTTBakedChar.Buffer charData = STBTTBakedChar.malloc(TextData.NUM_CHARS, stack);
         STBTruetype.stbtt_BakeFontBitmap(ttfFileData, charResolution, grayscaleImageBuffer, grayscaleSideSize, grayscaleSideSize, TextData.FIRST_CHAR, charData);
+        MemoryUtil.memFree(ttfFileData);
 
         // Convert to RGBA
         try (TextureData textureData = TextureUtils.convertGrayscaleToRGBA(grayscaleImageBuffer, grayscaleSideSize, grayscaleTotalSize, file.fontColor())) {

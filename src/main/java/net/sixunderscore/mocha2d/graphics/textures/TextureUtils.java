@@ -1,6 +1,7 @@
 package net.sixunderscore.mocha2d.graphics.textures;
 
 import net.sixunderscore.mocha2d.util.Color;
+import net.sixunderscore.mocha2d.util.ResourceLoader;
 import net.sixunderscore.mocha2d.vulkan.util.GpuBuffer;
 import org.lwjgl.stb.STBImage;
 import org.lwjgl.system.MemoryStack;
@@ -11,15 +12,17 @@ import org.lwjgl.vulkan.VK14;
 import java.nio.ByteBuffer;
 
 public class TextureUtils {
-    public static TextureData decodeImage(ByteBuffer rawImage) {
+    public static TextureData loadAndDecodeImage(String imagePath) {
+        ByteBuffer rawImage = ResourceLoader.loadRawFile(imagePath);
         int[] width = new int[1];
         int[] height = new int[1];
         int[] channels = new int[1];
 
         ByteBuffer imageData = STBImage.stbi_load_from_memory(rawImage, width, height, channels, STBImage.STBI_rgb_alpha);
+        MemoryUtil.memFree(rawImage);
 
         if (imageData == null) {
-            throw new RuntimeException("Failed to decode image");
+            throw new RuntimeException("Failed to decode image: " + imagePath);
         }
 
         return new TextureData(imageData, width[0], height[0]);

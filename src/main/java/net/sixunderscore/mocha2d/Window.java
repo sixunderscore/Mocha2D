@@ -103,7 +103,7 @@ public class Window {
 
     private static void setWindowIcon(String path) {
         if (!path.isEmpty()) {
-            try (TextureData textureData = TextureUtils.decodeImage(ResourceLoader.loadRawFile(path));
+            try (TextureData textureData = TextureUtils.loadAndDecodeImage(path);
                  GLFWImage.Buffer icons = GLFWImage.malloc(1)) {
                 icons.get(0).set(textureData.width(), textureData.height(), textureData.data());
 

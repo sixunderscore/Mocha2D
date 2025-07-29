@@ -40,6 +40,10 @@ public class GpuBuffer implements AutoCloseable {
     }
 
     public ByteBuffer map(MemoryStack stack) {
+        if (this.isMapped) {
+            throw new IllegalStateException("Buffer can only be mapped once");
+        }
+
         PointerBuffer mappedBufferPtr = stack.mallocPointer(1);
         Vma.vmaMapMemory(VulkanManager.getAllocator(), this.allocation, mappedBufferPtr);
         this.isMapped = true;
