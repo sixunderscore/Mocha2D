@@ -32,7 +32,7 @@ public class BatchRenderer implements AutoCloseable {
     private final GpuBuffer[] stagingIndexBuffers;
     private final ShortBuffer[] mappedStagingIndexBuffers;
     private final GpuBuffer indexBuffer;
-    private int quadCount;
+    private int indexOffset = 0;
 
     private final long[] imageAvailableSemaphores;
     private final long[] renderFinishedSemaphores;
@@ -54,11 +54,14 @@ public class BatchRenderer implements AutoCloseable {
         this.inFlightFences = new long[FRAMES_IN_FLIGHT];
 
         try (MemoryStack stack = MemoryStack.stackPush()) {
-            int indexBufferSize = 0xFFFF; // Unsigned short max value
-            int indexBufferSizeBytes = indexBufferSize * Short.BYTES;
-            this.indexBuffer = new GpuBuffer(stack, indexBufferSizeBytes, VK14.VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK14.VK_BUFFER_USAGE_INDEX_BUFFER_BIT, Vma.VMA_MEMORY_USAGE_GPU_ONLY);
+            int maxQuads = 0xFFFF / 4; // Unsigned short max value divided by 4 vertices in a quad
+            int maxIndices = maxQuads * 6; // 6 indices in a quad (two triangles)
+            int maxVertices = maxQuads * 4; // 4 vertices in a quad
 
-            int vertexBufferSizeBytes = indexBufferSize * VertexData.TOTAL_SIZE_BYTES;
+            int indexBufferSizeBytes = maxIndices * Short.BYTES;
+            int vertexBufferSizeBytes = maxVertices * VertexData.TOTAL_SIZE_BYTES;
+
+            this.indexBuffer = new GpuBuffer(stack, indexBufferSizeBytes, VK14.VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK14.VK_BUFFER_USAGE_INDEX_BUFFER_BIT, Vma.VMA_MEMORY_USAGE_GPU_ONLY);
             this.vertexBuffer = new GpuBuffer(stack, vertexBufferSizeBytes, VK14.VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK14.VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, Vma.VMA_MEMORY_USAGE_GPU_ONLY);
 
             this.cmdPool = new CommandPool(stack, VulkanManager.getGraphicsQueueIndex(), VK14.VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
@@ -68,7 +71,6 @@ public class BatchRenderer implements AutoCloseable {
 
                 this.stagingIndexBuffers[i] = new GpuBuffer(stack, indexBufferSizeBytes, VK14.VK_BUFFER_USAGE_TRANSFER_SRC_BIT, Vma.VMA_MEMORY_USAGE_CPU_TO_GPU);
                 this.mappedStagingIndexBuffers[i] = this.stagingIndexBuffers[i].map(stack).asShortBuffer();
-
                 this.stagingVertexBuffers[i] = new GpuBuffer(stack, vertexBufferSizeBytes, VK14.VK_BUFFER_USAGE_TRANSFER_SRC_BIT, Vma.VMA_MEMORY_USAGE_CPU_TO_GPU);
                 this.mappedStagingVertexBuffers[i] = this.stagingVertexBuffers[i].map(stack).asFloatBuffer();
 
@@ -92,15 +94,16 @@ public class BatchRenderer implements AutoCloseable {
     }
 
     public void addSprite(TextureRegion texture, float x, float y, float width, float height, float rotationDegrees, float pivotX, float pivotY) {
-        int indexOffset = this.quadCount++ * 4;
         this.mappedStagingIndexBuffers[this.frameIndex]
-                .put((short) indexOffset)       // Top-left
-                .put((short) (indexOffset + 1)) // Top-right
-                .put((short) (indexOffset + 2)) // Bottom-left
+                .put((short) this.indexOffset)        // Top-left
+                .put((short) (this.indexOffset + 1))  // Top-right
+                .put((short) (this.indexOffset + 2))  // Bottom-left
 
-                .put((short) (indexOffset + 1)) // Top-right
-                .put((short) (indexOffset + 3)) // Bottom-right
-                .put((short) (indexOffset + 2)); // Bottom-left
+                .put((short) (this.indexOffset + 1))  // Top-right
+                .put((short) (this.indexOffset + 3))  // Bottom-right
+                .put((short) (this.indexOffset + 2)); // Bottom-left
+
+        this.indexOffset += 4;
 
         FloatBuffer stagingVertexBuffer = this.mappedStagingVertexBuffers[this.frameIndex];
 
@@ -180,9 +183,9 @@ public class BatchRenderer implements AutoCloseable {
         this.renderHelper.submitGraphicsCmdBuffer(commandBuffer, imageAvailableSemaphore, renderFinishedSemaphore, inFlightFence);
         this.renderHelper.presentImageToSwapChain(swapChain, this.imageIndexBuffer, renderFinishedSemaphore);
 
-        this.quadCount = 0;
         mappedStagingVertexBuffer.clear();
         mappedStagingIndexBuffer.clear();
+        this.indexOffset = 0;
         this.frameIndex = ++this.frameIndex % FRAMES_IN_FLIGHT;
     }
 
@@ -199,6 +202,9 @@ public class BatchRenderer implements AutoCloseable {
         this.cmdPool.close();
         this.renderHelper.close();
 
+        this.vertexBuffer.close();
+        this.indexBuffer.close();
+
         for (int i = 0; i < FRAMES_IN_FLIGHT; ++i) {
             this.stagingVertexBuffers[i].close();
             this.stagingIndexBuffers[i].close();
@@ -210,9 +216,6 @@ public class BatchRenderer implements AutoCloseable {
         for (int i = 0; i < this.swapChainImageCount; ++i) {
             VK14.vkDestroySemaphore(logicalDevice, this.renderFinishedSemaphores[i], null);
         }
-
-        this.vertexBuffer.close();
-        this.indexBuffer.close();
 
         this.pipeline.close();
 
