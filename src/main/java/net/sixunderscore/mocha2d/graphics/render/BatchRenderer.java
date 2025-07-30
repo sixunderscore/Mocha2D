@@ -54,11 +54,11 @@ public class BatchRenderer implements AutoCloseable {
         this.inFlightFences = new long[FRAMES_IN_FLIGHT];
 
         try (MemoryStack stack = MemoryStack.stackPush()) {
-            int initialElementCount = Short.MAX_VALUE;
-            int indexBufferSizeBytes = initialElementCount * Short.BYTES;
+            int indexBufferSize = 0xFFFF; // Unsigned short max value
+            int indexBufferSizeBytes = indexBufferSize * Short.BYTES;
             this.indexBuffer = new GpuBuffer(stack, indexBufferSizeBytes, VK14.VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK14.VK_BUFFER_USAGE_INDEX_BUFFER_BIT, Vma.VMA_MEMORY_USAGE_GPU_ONLY);
 
-            int vertexBufferSizeBytes = initialElementCount * VertexData.TOTAL_SIZE_BYTES;
+            int vertexBufferSizeBytes = indexBufferSize * VertexData.TOTAL_SIZE_BYTES;
             this.vertexBuffer = new GpuBuffer(stack, vertexBufferSizeBytes, VK14.VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK14.VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, Vma.VMA_MEMORY_USAGE_GPU_ONLY);
 
             this.cmdPool = new CommandPool(stack, VulkanManager.getGraphicsQueueIndex(), VK14.VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
