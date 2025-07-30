@@ -164,16 +164,16 @@ public class BatchRenderer implements AutoCloseable {
         int imageIndex = this.imageIndexBuffer.get(0);
 
         FloatBuffer mappedStagingVertexBuffer = this.mappedStagingVertexBuffers[this.frameIndex];
-        int vertexBufferSizeBytes = mappedStagingVertexBuffer.position() * Float.BYTES;
+        int vertexBufferUsedSizeBytes = mappedStagingVertexBuffer.position() * Float.BYTES;
         ShortBuffer mappedStagingIndexBuffer = this.mappedStagingIndexBuffers[this.frameIndex];
-        int indexBufferSizeBytes = mappedStagingIndexBuffer.position() * Short.BYTES;
+        int indexBufferUsedSizeBytes = mappedStagingIndexBuffer.position() * Short.BYTES;
 
         VkCommandBuffer commandBuffer = this.cmdBuffers[this.frameIndex];
 
         VK14.vkResetCommandBuffer(commandBuffer, 0);
         VK14.vkBeginCommandBuffer(commandBuffer, this.renderHelper.getCmdBufferBeginInfo());
 
-        this.renderHelper.recordTransferCommands(commandBuffer, this.stagingIndexBuffers[this.frameIndex], this.indexBuffer, indexBufferSizeBytes, this.stagingVertexBuffers[this.frameIndex], this.vertexBuffer, vertexBufferSizeBytes);
+        this.renderHelper.recordTransferCommands(commandBuffer, this.stagingIndexBuffers[this.frameIndex], this.indexBuffer, indexBufferUsedSizeBytes, this.stagingVertexBuffers[this.frameIndex], this.vertexBuffer, vertexBufferUsedSizeBytes);
         this.renderHelper.recordGraphicsCommands(commandBuffer, swapChain, viewportScissor, this.indexBuffer, mappedStagingIndexBuffer.position(), this.pipeline, imageIndex, camera);
 
         VK14.vkEndCommandBuffer(commandBuffer);
