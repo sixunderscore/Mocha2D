@@ -4,7 +4,7 @@ import java.util.concurrent.locks.LockSupport;
 
 public class FpsCap {
     private final boolean shouldCap;
-    private long frameCapDurationNanos;
+    private final long frameCapDurationNanos;
     private long nextFrameTimeNanos;
 
     public FpsCap(int fpsCap) {
@@ -13,6 +13,7 @@ public class FpsCap {
             this.nextFrameTimeNanos = System.nanoTime();
             this.shouldCap = true;
         } else {
+            this.frameCapDurationNanos = 0;
             this.shouldCap = false;
         }
     }
@@ -22,11 +23,8 @@ public class FpsCap {
             return;
         }
 
-        long now = System.nanoTime();
-
-        while ((this.nextFrameTimeNanos - now) > 0) {
+        while ((this.nextFrameTimeNanos - System.nanoTime()) > 0) {
             LockSupport.parkNanos(1);
-            now = System.nanoTime();
         }
 
         this.nextFrameTimeNanos = Math.max(this.nextFrameTimeNanos + this.frameCapDurationNanos, System.nanoTime());
