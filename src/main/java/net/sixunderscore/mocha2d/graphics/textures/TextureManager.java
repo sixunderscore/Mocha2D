@@ -164,9 +164,7 @@ public class TextureManager implements AutoCloseable {
         VK14.vkDestroyFence(VulkanManager.getLogicalDevice(), imagesUploadedFence, null);
 
         // Clean up all staging buffers after textures have been uploaded
-        for (GpuBuffer stagingBuffer : stagingBuffersToFree) {
-            stagingBuffer.close();
-        }
+        stagingBuffersToFree.forEach(GpuBuffer::close);
 
         // Adding regular textures and text renderer font atlas textures to descriptor set
         VkDescriptorImageInfo.Buffer descriptorImagesInfo = VkDescriptorImageInfo.calloc(this.totalTextures, stack);
