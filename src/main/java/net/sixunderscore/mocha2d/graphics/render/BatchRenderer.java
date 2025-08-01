@@ -20,7 +20,6 @@ public class BatchRenderer implements AutoCloseable {
     private static final int FRAMES_IN_FLIGHT = 2;
     private final int swapChainImageCount;
     private int frameIndex = 0;
-    private final RenderHelper renderHelper;
     private final GraphicsPipeline pipeline;
     private final CommandPool commandPool;
     private final VkCommandBuffer[] commandBuffers;
@@ -85,7 +84,6 @@ public class BatchRenderer implements AutoCloseable {
             this.pipeline = new GraphicsPipeline(stack, textureManager, swapChain, "assets/shaders/vertex.spv", "assets/shaders/fragment.spv");
         }
 
-        this.renderHelper = new RenderHelper(textureManager, this.vertexBuffer);
         this.imageIndexBuffer = MemoryUtil.memAllocInt(1);
     }
 
@@ -152,41 +150,67 @@ public class BatchRenderer implements AutoCloseable {
                 .put(pivotX).put(pivotY);
     }
 
-    public void draw(OrthographicCamera camera, SwapChain swapChain, ViewportScissor viewportScissor) {
-        long inFlightFence = this.inFlightFences[this.frameIndex];
+    public void draw(OrthographicCamera camera, SwapChain swapChain, TextureManager textureManager, ViewportScissor viewportScissor) {
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            long inFlightFence = this.inFlightFences[this.frameIndex];
 
-        VK14.vkWaitForFences(VulkanManager.getLogicalDevice(), inFlightFence, true, Long.MAX_VALUE);
-        VK14.vkResetFences(VulkanManager.getLogicalDevice(), inFlightFence);
+            VK14.vkWaitForFences(VulkanManager.getLogicalDevice(), inFlightFence, true, Long.MAX_VALUE);
+            VK14.vkResetFences(VulkanManager.getLogicalDevice(), inFlightFence);
 
-        long imageAvailableSemaphore = this.imageAvailableSemaphores[this.frameIndex];
+            long imageAvailableSemaphore = this.imageAvailableSemaphores[this.frameIndex];
 
-        KHRSwapchain.vkAcquireNextImageKHR(VulkanManager.getLogicalDevice(), swapChain.getSwapChain(), Long.MAX_VALUE, imageAvailableSemaphore, VK14.VK_NULL_HANDLE, this.imageIndexBuffer);
-        int imageIndex = this.imageIndexBuffer.get(0);
+            KHRSwapchain.vkAcquireNextImageKHR(VulkanManager.getLogicalDevice(), swapChain.getSwapChain(), Long.MAX_VALUE, imageAvailableSemaphore, VK14.VK_NULL_HANDLE, this.imageIndexBuffer);
+            int imageIndex = this.imageIndexBuffer.get(0);
 
-        FloatBuffer mappedStagingVertexBuffer = this.mappedStagingVertexBuffers[this.frameIndex];
-        int vertexBufferUsedSizeBytes = mappedStagingVertexBuffer.position() * Float.BYTES;
-        ShortBuffer mappedStagingIndexBuffer = this.mappedStagingIndexBuffers[this.frameIndex];
-        int indexBufferUsedSizeBytes = mappedStagingIndexBuffer.position() * Short.BYTES;
+            FloatBuffer mappedStagingVertexBuffer = this.mappedStagingVertexBuffers[this.frameIndex];
+            int vertexBufferUsedSizeBytes = mappedStagingVertexBuffer.position() * Float.BYTES;
+            ShortBuffer mappedStagingIndexBuffer = this.mappedStagingIndexBuffers[this.frameIndex];
+            int indexBufferUsedSizeBytes = mappedStagingIndexBuffer.position() * Short.BYTES;
 
-        VkCommandBuffer commandBuffer = this.commandBuffers[this.frameIndex];
+            VkCommandBuffer commandBuffer = this.commandBuffers[this.frameIndex];
 
-        VK14.vkResetCommandBuffer(commandBuffer, 0);
-        VK14.vkBeginCommandBuffer(commandBuffer, this.renderHelper.getCommandBufferBeginInfo());
+            VK14.vkResetCommandBuffer(commandBuffer, 0);
+            VkCommandBufferBeginInfo commandBufferBeginInfo = VkCommandBufferBeginInfo.calloc(stack)
+                    .sType$Default()
+                    .flags(VK14.VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+            VK14.vkBeginCommandBuffer(commandBuffer, commandBufferBeginInfo);
 
-        this.renderHelper.recordTransferCommands(commandBuffer, this.stagingIndexBuffers[this.frameIndex], this.indexBuffer, indexBufferUsedSizeBytes, this.stagingVertexBuffers[this.frameIndex], this.vertexBuffer, vertexBufferUsedSizeBytes);
-        this.renderHelper.recordGraphicsCommands(commandBuffer, swapChain, viewportScissor, this.indexBuffer, mappedStagingIndexBuffer.position(), this.pipeline, imageIndex, camera);
+            RenderUtils.recordTransferCommands(
+                    stack,
+                    commandBuffer,
+                    this.stagingIndexBuffers[this.frameIndex],
+                    this.indexBuffer,
+                    indexBufferUsedSizeBytes,
+                    this.stagingVertexBuffers[this.frameIndex],
+                    this.vertexBuffer,
+                    vertexBufferUsedSizeBytes
+            );
+            RenderUtils.recordGraphicsCommands(
+                    stack,
+                    commandBuffer,
+                    swapChain,
+                    textureManager,
+                    viewportScissor,
+                    this.vertexBuffer,
+                    this.indexBuffer,
+                    mappedStagingIndexBuffer.position(),
+                    this.pipeline,
+                    imageIndex,
+                    camera
+            );
 
-        VK14.vkEndCommandBuffer(commandBuffer);
+            VK14.vkEndCommandBuffer(commandBuffer);
 
-        long renderFinishedSemaphore = this.renderFinishedSemaphores[imageIndex];
+            long renderFinishedSemaphore = this.renderFinishedSemaphores[imageIndex];
 
-        this.renderHelper.submitCommandBuffer(commandBuffer, imageAvailableSemaphore, renderFinishedSemaphore, inFlightFence);
-        this.renderHelper.presentImageToSwapChain(swapChain, this.imageIndexBuffer, renderFinishedSemaphore);
+            RenderUtils.submitCommandBuffer(stack, commandBuffer, imageAvailableSemaphore, renderFinishedSemaphore, inFlightFence);
+            RenderUtils.presentImageToSwapChain(stack, swapChain, this.imageIndexBuffer, renderFinishedSemaphore);
 
-        mappedStagingVertexBuffer.clear();
-        mappedStagingIndexBuffer.clear();
-        this.indexOffset = 0;
-        this.frameIndex = ++this.frameIndex % FRAMES_IN_FLIGHT;
+            mappedStagingVertexBuffer.clear();
+            mappedStagingIndexBuffer.clear();
+            this.indexOffset = 0;
+            this.frameIndex = ++this.frameIndex % FRAMES_IN_FLIGHT;
+        }
     }
 
     public long[] getInFlightFences() {
@@ -200,7 +224,6 @@ public class BatchRenderer implements AutoCloseable {
         VK14.vkQueueWaitIdle(VulkanManager.getGraphicsQueue());
 
         this.commandPool.close();
-        this.renderHelper.close();
 
         this.vertexBuffer.close();
         this.indexBuffer.close();

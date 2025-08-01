@@ -1,5 +1,7 @@
 package net.sixunderscore.mocha2d.util;
 
+import java.util.concurrent.locks.LockSupport;
+
 public class FpsCap {
     private final boolean shouldCap;
     private long frameCapDurationNanos;
@@ -20,14 +22,12 @@ public class FpsCap {
             return;
         }
 
-        try {
-            long now = System.nanoTime();
+        long now = System.nanoTime();
 
-            while ((this.nextFrameTimeNanos - now) > 0) {
-                Thread.sleep(0, 1);
-                now = System.nanoTime();
-            }
-        } catch (InterruptedException ignored) {}
+        while ((this.nextFrameTimeNanos - now) > 0) {
+            LockSupport.parkNanos(1);
+            now = System.nanoTime();
+        }
 
         this.nextFrameTimeNanos = Math.max(this.nextFrameTimeNanos + this.frameCapDurationNanos, System.nanoTime());
     }

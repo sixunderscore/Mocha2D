@@ -96,7 +96,7 @@ public class Window {
             screen.update(keyListener, mouseListener);
             screen.render(batch);
 
-            batch.draw(camera, swapChain, viewportScissor);
+            batch.draw(camera, swapChain, texManager, viewportScissor);
             cap.cap();
         }
     }
