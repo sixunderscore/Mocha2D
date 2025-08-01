@@ -122,7 +122,7 @@ public class RenderHelper implements AutoCloseable {
         this.swapChainHandleBuffer = MemoryUtil.memAllocLong(1);
     }
 
-    public VkCommandBufferBeginInfo getCmdBufferBeginInfo() {
+    public VkCommandBufferBeginInfo getCommandBufferBeginInfo() {
         return this.cmdBufferBeginInfo;
     }
 
@@ -138,34 +138,34 @@ public class RenderHelper implements AutoCloseable {
         }
     }
 
-    public void recordGraphicsCommands(VkCommandBuffer graphicsCommandBuffer, SwapChain swapChain, ViewportScissor viewportScissor, GpuBuffer indexBuffer, int indexCount, GraphicsPipeline pipeline, int imageIndex, OrthographicCamera camera) {
+    public void recordGraphicsCommands(VkCommandBuffer commandBuffer, SwapChain swapChain, ViewportScissor viewportScissor, GpuBuffer indexBuffer, int indexCount, GraphicsPipeline pipeline, int imageIndex, OrthographicCamera camera) {
         this.imageBarriers.get(0).image(swapChain.getImage(imageIndex));
         this.imageBarriers.get(1).image(swapChain.getImage(imageIndex));
-        VK14.vkCmdPipelineBarrier2(graphicsCommandBuffer, this.barrierDependencyInfo);
+        VK14.vkCmdPipelineBarrier2(commandBuffer, this.barrierDependencyInfo);
 
-        VK14.vkCmdPushConstants(graphicsCommandBuffer, pipeline.getLayout(), VK14.VK_SHADER_STAGE_VERTEX_BIT, 0, camera.getBuffer());
+        VK14.vkCmdPushConstants(commandBuffer, pipeline.getLayout(), VK14.VK_SHADER_STAGE_VERTEX_BIT, 0, camera.getBuffer());
 
         this.colorAttachments.get(0).imageView(swapChain.getImageView(imageIndex));
         this.renderingInfo.renderArea(viewportScissor.getScissor().get(0));
 
-        VK14.vkCmdBeginRendering(graphicsCommandBuffer, this.renderingInfo);
+        VK14.vkCmdBeginRendering(commandBuffer, this.renderingInfo);
 
-        VK14.vkCmdBindPipeline(graphicsCommandBuffer, VK14.VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.getPipeline());
-        VK14.vkCmdBindDescriptorSets(graphicsCommandBuffer, VK14.VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.getLayout(), 0, this.descriptorSetHandleBuffer, null);
-        VK14.vkCmdSetViewport(graphicsCommandBuffer, 0, viewportScissor.getViewport());
-        VK14.vkCmdSetScissor(graphicsCommandBuffer, 0, viewportScissor.getScissor());
-        VK14.vkCmdBindVertexBuffers(graphicsCommandBuffer, 0, this.vertexBufferHandleBuffer, this.vertexBufferOffsetBuffer);
-        VK14.vkCmdBindIndexBuffer(graphicsCommandBuffer, indexBuffer.getBuffer(), 0, VK14.VK_INDEX_TYPE_UINT16);
+        VK14.vkCmdBindPipeline(commandBuffer, VK14.VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.getPipeline());
+        VK14.vkCmdBindDescriptorSets(commandBuffer, VK14.VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.getLayout(), 0, this.descriptorSetHandleBuffer, null);
+        VK14.vkCmdSetViewport(commandBuffer, 0, viewportScissor.getViewport());
+        VK14.vkCmdSetScissor(commandBuffer, 0, viewportScissor.getScissor());
+        VK14.vkCmdBindVertexBuffers(commandBuffer, 0, this.vertexBufferHandleBuffer, this.vertexBufferOffsetBuffer);
+        VK14.vkCmdBindIndexBuffer(commandBuffer, indexBuffer.getBuffer(), 0, VK14.VK_INDEX_TYPE_UINT16);
 
-        VK14.vkCmdDrawIndexed(graphicsCommandBuffer, indexCount, 1, 0, 0, 0);
+        VK14.vkCmdDrawIndexed(commandBuffer, indexCount, 1, 0, 0, 0);
 
-        VK14.vkCmdEndRendering(graphicsCommandBuffer);
+        VK14.vkCmdEndRendering(commandBuffer);
     }
 
-    public void submitGraphicsCmdBuffer(VkCommandBuffer graphicsCmdBuffer, long waitSemaphore, long signalSemaphore, long signalFence) {
+    public void submitCommandBuffer(VkCommandBuffer commandBuffer, long waitSemaphore, long signalSemaphore, long signalFence) {
         this.waitSemaphoreSubmitInfo.get(0).semaphore(waitSemaphore);
         this.signalSemaphoreSubmitInfo.get(0).semaphore(signalSemaphore);
-        this.cmdBufferSubmitInfo.get(0).commandBuffer(graphicsCmdBuffer);
+        this.cmdBufferSubmitInfo.get(0).commandBuffer(commandBuffer);
 
         VK14.vkQueueSubmit2(VulkanManager.getGraphicsQueue(), this.submitInfo, signalFence);
     }
@@ -192,6 +192,7 @@ public class RenderHelper implements AutoCloseable {
         this.signalSemaphoreSubmitInfo.close();
         this.cmdBufferSubmitInfo.close();
         this.submitInfo.close();
+        this.presentInfo.close();
 
         MemoryUtil.memFree(this.vertexBufferHandleBuffer);
         MemoryUtil.memFree(this.vertexBufferOffsetBuffer);

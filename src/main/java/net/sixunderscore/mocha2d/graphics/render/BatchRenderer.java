@@ -22,8 +22,8 @@ public class BatchRenderer implements AutoCloseable {
     private int frameIndex = 0;
     private final RenderHelper renderHelper;
     private final GraphicsPipeline pipeline;
-    private final CommandPool cmdPool;
-    private final VkCommandBuffer[] cmdBuffers;
+    private final CommandPool commandPool;
+    private final VkCommandBuffer[] commandBuffers;
 
     private final GpuBuffer[] stagingVertexBuffers;
     private final FloatBuffer[] mappedStagingVertexBuffers;
@@ -43,7 +43,7 @@ public class BatchRenderer implements AutoCloseable {
     public BatchRenderer(TextureManager textureManager, SwapChain swapChain) {
         this.swapChainImageCount = swapChain.getImageCount();
 
-        this.cmdBuffers = new VkCommandBuffer[FRAMES_IN_FLIGHT];
+        this.commandBuffers = new VkCommandBuffer[FRAMES_IN_FLIGHT];
         this.stagingVertexBuffers = new GpuBuffer[FRAMES_IN_FLIGHT];
         this.mappedStagingVertexBuffers = new FloatBuffer[FRAMES_IN_FLIGHT];
         this.stagingIndexBuffers = new GpuBuffer[FRAMES_IN_FLIGHT];
@@ -64,10 +64,10 @@ public class BatchRenderer implements AutoCloseable {
             this.indexBuffer = new GpuBuffer(stack, indexBufferSizeBytes, VK14.VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK14.VK_BUFFER_USAGE_INDEX_BUFFER_BIT, Vma.VMA_MEMORY_USAGE_GPU_ONLY);
             this.vertexBuffer = new GpuBuffer(stack, vertexBufferSizeBytes, VK14.VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK14.VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, Vma.VMA_MEMORY_USAGE_GPU_ONLY);
 
-            this.cmdPool = new CommandPool(stack, VulkanManager.getGraphicsQueueIndex(), VK14.VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+            this.commandPool = new CommandPool(stack, VulkanManager.getGraphicsQueueIndex(), VK14.VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
 
             for (int i = 0; i < FRAMES_IN_FLIGHT; ++i) {
-                this.cmdBuffers[i] = this.cmdPool.allocateCommandBuffer(stack);
+                this.commandBuffers[i] = this.commandPool.allocateCommandBuffer(stack);
 
                 this.stagingIndexBuffers[i] = new GpuBuffer(stack, indexBufferSizeBytes, VK14.VK_BUFFER_USAGE_TRANSFER_SRC_BIT, Vma.VMA_MEMORY_USAGE_CPU_TO_GPU);
                 this.mappedStagingIndexBuffers[i] = this.stagingIndexBuffers[i].map(stack).asShortBuffer();
@@ -168,10 +168,10 @@ public class BatchRenderer implements AutoCloseable {
         ShortBuffer mappedStagingIndexBuffer = this.mappedStagingIndexBuffers[this.frameIndex];
         int indexBufferUsedSizeBytes = mappedStagingIndexBuffer.position() * Short.BYTES;
 
-        VkCommandBuffer commandBuffer = this.cmdBuffers[this.frameIndex];
+        VkCommandBuffer commandBuffer = this.commandBuffers[this.frameIndex];
 
         VK14.vkResetCommandBuffer(commandBuffer, 0);
-        VK14.vkBeginCommandBuffer(commandBuffer, this.renderHelper.getCmdBufferBeginInfo());
+        VK14.vkBeginCommandBuffer(commandBuffer, this.renderHelper.getCommandBufferBeginInfo());
 
         this.renderHelper.recordTransferCommands(commandBuffer, this.stagingIndexBuffers[this.frameIndex], this.indexBuffer, indexBufferUsedSizeBytes, this.stagingVertexBuffers[this.frameIndex], this.vertexBuffer, vertexBufferUsedSizeBytes);
         this.renderHelper.recordGraphicsCommands(commandBuffer, swapChain, viewportScissor, this.indexBuffer, mappedStagingIndexBuffer.position(), this.pipeline, imageIndex, camera);
@@ -180,7 +180,7 @@ public class BatchRenderer implements AutoCloseable {
 
         long renderFinishedSemaphore = this.renderFinishedSemaphores[imageIndex];
 
-        this.renderHelper.submitGraphicsCmdBuffer(commandBuffer, imageAvailableSemaphore, renderFinishedSemaphore, inFlightFence);
+        this.renderHelper.submitCommandBuffer(commandBuffer, imageAvailableSemaphore, renderFinishedSemaphore, inFlightFence);
         this.renderHelper.presentImageToSwapChain(swapChain, this.imageIndexBuffer, renderFinishedSemaphore);
 
         mappedStagingVertexBuffer.clear();
@@ -199,7 +199,7 @@ public class BatchRenderer implements AutoCloseable {
         VK14.vkWaitForFences(logicalDevice, this.inFlightFences, true, Long.MAX_VALUE);
         VK14.vkQueueWaitIdle(VulkanManager.getGraphicsQueue());
 
-        this.cmdPool.close();
+        this.commandPool.close();
         this.renderHelper.close();
 
         this.vertexBuffer.close();

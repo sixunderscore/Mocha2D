@@ -126,35 +126,35 @@ public class TextureManager implements AutoCloseable {
         List<GpuBuffer> stagingBuffersToFree = new ArrayList<>(this.totalTextures);
         int textureIndex = 0;
 
-        try (CommandPool cmdPool = new CommandPool(stack, VulkanManager.getGraphicsQueueIndex(), VK14.VK_COMMAND_POOL_CREATE_TRANSIENT_BIT)) {
-            VkCommandBuffer cmdBuffer = cmdPool.allocateCommandBuffer(stack);
+        try (CommandPool commandPool = new CommandPool(stack, VulkanManager.getGraphicsQueueIndex(), VK14.VK_COMMAND_POOL_CREATE_TRANSIENT_BIT)) {
+            VkCommandBuffer commandBuffer = commandPool.allocateCommandBuffer(stack);
 
-            VkCommandBufferBeginInfo cmdBufferBeginInfo = VkCommandBufferBeginInfo.calloc(stack)
+            VkCommandBufferBeginInfo commandBufferBeginInfo = VkCommandBufferBeginInfo.calloc(stack)
                     .sType$Default()
                     .flags(VK14.VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
-            VK14.vkBeginCommandBuffer(cmdBuffer, cmdBufferBeginInfo);
+            VK14.vkBeginCommandBuffer(commandBuffer, commandBufferBeginInfo);
 
             for (TextureFile file : textureFiles) {
-                TextureAtlas atlas = this.createTextureAtlas(stack, cmdBuffer, file, textureIndex++, stagingBuffersToFree);
+                TextureAtlas atlas = this.createTextureAtlas(stack, commandBuffer, file, textureIndex++, stagingBuffersToFree);
                 this.atlasMap.put(file.resourceKey(), atlas);
             }
 
             for (TtfFile file : ttfFiles) {
-                TextRenderer textRenderer = this.createTextRenderer(stack, cmdBuffer, file, textureIndex++, stagingBuffersToFree);
+                TextRenderer textRenderer = this.createTextRenderer(stack, commandBuffer, file, textureIndex++, stagingBuffersToFree);
                 this.textRendererMap.put(file.resourceKey(), textRenderer);
             }
 
-            VK14.vkEndCommandBuffer(cmdBuffer);
+            VK14.vkEndCommandBuffer(commandBuffer);
 
-            VkCommandBufferSubmitInfo.Buffer cmdBufferSubmitInfo = VkCommandBufferSubmitInfo.calloc(1, stack);
-            cmdBufferSubmitInfo.get(0)
+            VkCommandBufferSubmitInfo.Buffer commandBufferSubmitInfo = VkCommandBufferSubmitInfo.calloc(1, stack);
+            commandBufferSubmitInfo.get(0)
                     .sType$Default()
-                    .commandBuffer(cmdBuffer);
+                    .commandBuffer(commandBuffer);
             VkSubmitInfo2.Buffer submitInfo = VkSubmitInfo2.calloc(1, stack);
             submitInfo.get(0)
                     .sType$Default()
-                    .pCommandBufferInfos(cmdBufferSubmitInfo);
+                    .pCommandBufferInfos(commandBufferSubmitInfo);
 
             VK14.vkQueueSubmit2(VulkanManager.getGraphicsQueue(), submitInfo, imagesUploadedFence);
             VK14.vkWaitForFences(VulkanManager.getLogicalDevice(), imagesUploadedFence, true, Long.MAX_VALUE);
@@ -195,13 +195,13 @@ public class TextureManager implements AutoCloseable {
         VK14.vkUpdateDescriptorSets(VulkanManager.getLogicalDevice(), writeDescriptorSet, null);
     }
 
-    private TextureAtlas createTextureAtlas(MemoryStack stack, VkCommandBuffer cmdBuffer, TextureFile file, int textureIndex, List<GpuBuffer> stagingBuffersToFree) {
+    private TextureAtlas createTextureAtlas(MemoryStack stack, VkCommandBuffer commandBuffer, TextureFile file, int textureIndex, List<GpuBuffer> stagingBuffersToFree) {
         try (TextureData textureData = TextureUtils.loadAndDecodeImage(file.path())) {
             TextureAtlas atlas = new TextureAtlas(textureData.width(), textureData.height(), file.isPixelated(), textureIndex);
             GpuBuffer stagingImageBuffer = TextureUtils.createStagingImageBuffer(stack, textureData);
 
             // Upload data from staging buffer to GPU memory
-            atlas.recordUploadCommands(stack, cmdBuffer, stagingImageBuffer);
+            atlas.recordUploadCommands(stack, commandBuffer, stagingImageBuffer);
 
             stagingBuffersToFree.add(stagingImageBuffer);
 
@@ -209,7 +209,7 @@ public class TextureManager implements AutoCloseable {
         }
     }
 
-    private TextRenderer createTextRenderer(MemoryStack stack, VkCommandBuffer cmdBuffer, TtfFile file, int textureIndex, List<GpuBuffer> stagingBuffersToFree) {
+    private TextRenderer createTextRenderer(MemoryStack stack, VkCommandBuffer commandBuffer, TtfFile file, int textureIndex, List<GpuBuffer> stagingBuffersToFree) {
         STBTTFontinfo fontInfo = STBTTFontinfo.malloc(stack);
         ByteBuffer ttfFileData = ResourceLoader.loadRawFile(file.path());
 
@@ -235,7 +235,7 @@ public class TextureManager implements AutoCloseable {
             GpuBuffer stagingImageBuffer = TextureUtils.createStagingImageBuffer(stack, textureData);
 
             // Upload data from staging buffer to GPU memory
-            fontAtlas.recordUploadCommands(stack, cmdBuffer, stagingImageBuffer);
+            fontAtlas.recordUploadCommands(stack, commandBuffer, stagingImageBuffer);
 
             TextRenderer textRenderer = new TextRenderer(fontAtlas, charResolution, charData, fontInfo);
 
