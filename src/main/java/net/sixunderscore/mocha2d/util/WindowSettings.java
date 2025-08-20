@@ -4,6 +4,8 @@ import net.sixunderscore.mocha2d.graphics.text.TtfFile;
 import net.sixunderscore.mocha2d.graphics.textures.TextureFile;
 
 public class WindowSettings {
+    private TextureFile[] textureFiles = new TextureFile[0];
+    private TtfFile[] ttfFiles = new TtfFile[0];
     private String windowName = "Mocha2D Window";
     private String windowIconPath = "";
     private int initialWidth = 800;
@@ -11,8 +13,14 @@ public class WindowSettings {
     private boolean resizeable = true;
     private boolean vSyncEnabled = false;
     private int fpsCap = 1000;
-    private TextureFile[] textureFiles = new TextureFile[0];
-    private TtfFile[] ttfFiles = new TtfFile[0];
+
+    public void setTextureFiles(TextureFile... textureFiles) {
+        this.textureFiles = textureFiles;
+    }
+
+    public void setTtfFiles(TtfFile... ttfFiles) {
+        this.ttfFiles = ttfFiles;
+    }
 
     public void setWindowName(String windowName) {
         this.windowName = windowName;
@@ -39,14 +47,6 @@ public class WindowSettings {
     public void setVSyncDisabled(int fpsCap) {
         this.vSyncEnabled = false;
         this.fpsCap = fpsCap;
-    }
-
-    public void setTextureFiles(TextureFile... textureFiles) {
-        this.textureFiles = textureFiles;
-    }
-
-    public void setTtfFiles(TtfFile... ttfFiles) {
-        this.ttfFiles = ttfFiles;
     }
 
     public String getWindowName() {
