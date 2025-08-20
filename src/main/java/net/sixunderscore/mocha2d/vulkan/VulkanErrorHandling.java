@@ -13,6 +13,7 @@ public class VulkanErrorHandling {
                 .sType$Default()
                 .messageSeverity(
                         EXTDebugUtils.VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
+                                EXTDebugUtils.VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT |
                                 EXTDebugUtils.VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
                                 EXTDebugUtils.VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT
                 )
@@ -31,12 +32,10 @@ public class VulkanErrorHandling {
     }
 
     private static int errorCallback(int messageSeverity, int messageType, long pCallbackData, long pUserData) {
-        String severity = getSeverity(messageSeverity);
-
-        String type = getType(messageType);
-
         VkDebugUtilsMessengerCallbackDataEXT data = VkDebugUtilsMessengerCallbackDataEXT.create(pCallbackData);
-        System.err.println("Vulkan Validation: Error type: " + type + " Severity: " + severity + "\n\tMessageId: " + data.pMessageIdNameString() + "\n\tMessage: " + data.pMessageString());
+        System.err.println("Vulkan Validation: Error type: " + getType(messageType) + " Severity: " + getSeverity(messageSeverity) +
+                "\n\tMessageId: " + data.pMessageIdNameString() +
+                "\n\tMessage: " + data.pMessageString());
 
         return VK14.VK_FALSE;
     }

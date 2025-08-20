@@ -270,14 +270,8 @@ public class TextureManager implements AutoCloseable {
 
     @Override
     public void close() {
-        for (TextureAtlas textureAtlas : this.atlasMap.values()) {
-            textureAtlas.close();
-        }
-
-        for (TextRenderer textRenderer : this.textRendererMap.values()) {
-            textRenderer.close();
-        }
-
+        this.atlasMap.values().forEach(TextureAtlas::close);
+        this.textRendererMap.values().forEach(TextRenderer::close);
         VK14.vkDestroyDescriptorPool(VulkanManager.getLogicalDevice(), this.descriptorPool, null);
         VK14.vkDestroyDescriptorSetLayout(VulkanManager.getLogicalDevice(), this.descriptorSetLayout, null);
         VK14.vkDestroySampler(VulkanManager.getLogicalDevice(), this.linearSampler, null);
