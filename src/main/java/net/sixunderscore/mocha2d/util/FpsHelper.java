@@ -1,13 +1,17 @@
 package net.sixunderscore.mocha2d.util;
 
-import java.util.concurrent.locks.LockSupport;
+import net.sixunderscore.mocha2d.Window;
 
-public class FpsCap {
+public class FpsHelper {
+    // Fps Cap
     private final boolean shouldCap;
     private final long frameCapDurationNanos;
     private long nextFrameTimeNanos;
+    // Fps Counter
+    private int fpsCount = 0;
+    private float fpsCountUpdateTimer = 0;
 
-    public FpsCap(int fpsCap) {
+    public FpsHelper(int fpsCap) {
         if (fpsCap > 0) {
             this.frameCapDurationNanos = 1_000_000_000L / fpsCap;
             this.nextFrameTimeNanos = System.nanoTime();
@@ -24,10 +28,23 @@ public class FpsCap {
         }
 
         while ((this.nextFrameTimeNanos - System.nanoTime()) > 0) {
-            LockSupport.parkNanos(1);
+            Thread.onSpinWait();
         }
 
         this.nextFrameTimeNanos = Math.max(this.nextFrameTimeNanos + this.frameCapDurationNanos, System.nanoTime());
+    }
+
+    public void updateCount() {
+        if (this.fpsCountUpdateTimer >= 1f) {
+            this.fpsCount = (int) (1f / Window.getDeltaTime());
+            this.fpsCountUpdateTimer = 0;
+        } else {
+            this.fpsCountUpdateTimer += Window.getDeltaTime();
+        }
+    }
+
+    public int getCount() {
+        return this.fpsCount;
     }
 }
 

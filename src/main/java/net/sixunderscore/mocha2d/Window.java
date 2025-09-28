@@ -5,8 +5,7 @@ import net.sixunderscore.mocha2d.graphics.textures.TextureData;
 import net.sixunderscore.mocha2d.graphics.textures.TextureManager;
 import net.sixunderscore.mocha2d.graphics.textures.TextureUtils;
 import net.sixunderscore.mocha2d.util.*;
-import net.sixunderscore.mocha2d.util.FpsCounter;
-import net.sixunderscore.mocha2d.util.FpsCap;
+import net.sixunderscore.mocha2d.util.FpsHelper;
 import net.sixunderscore.mocha2d.util.Screen;
 import net.sixunderscore.mocha2d.vulkan.VulkanManager;
 import net.sixunderscore.mocha2d.input.KeyListener;
@@ -32,7 +31,8 @@ public class Window {
     private static OrthographicCamera camera;
     private static KeyListener keyListener;
     private static MouseListener mouseListener;
-    private static FpsCap cap;
+    private static FpsHelper fpsHelper;
+    private static DeltaTime deltaTime;
 
     public static void start(WindowSettings settings, Screen initialScreen) {
         init(settings, initialScreen);
@@ -78,7 +78,8 @@ public class Window {
         screen.init(texManager);
         camera = new OrthographicCamera();
         batch = new BatchRenderer(texManager, swapChain);
-        cap = new FpsCap(settings.getFpsCap());
+        fpsHelper = new FpsHelper(settings.getFpsCap());
+        deltaTime = new DeltaTime();
     }
 
     private static void loop() {
@@ -89,15 +90,17 @@ public class Window {
                 shouldRebuildSwapChain = false;
             }
 
-            DeltaTime.update();
-            FpsCounter.update();
+            deltaTime.update();
+            fpsHelper.updateCount();
+
             GLFW.glfwPollEvents();
 
             screen.update(keyListener, mouseListener);
             screen.render(batch);
 
             batch.draw(camera, swapChain, texManager, viewportScissor);
-            cap.cap();
+
+            fpsHelper.cap();
         }
     }
 
@@ -140,6 +143,14 @@ public class Window {
 
     public static int getHeight() {
         return height;
+    }
+
+    public static float getDeltaTime() {
+        return deltaTime.get();
+    }
+
+    public static int getFpsCount() {
+        return fpsHelper.getCount();
     }
 
     private static void cleanUp() {
