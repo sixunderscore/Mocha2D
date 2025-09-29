@@ -27,7 +27,7 @@ public class RenderUtils {
         }
     }
 
-    public static void recordGraphicsCommands(MemoryStack stack, VkCommandBuffer commandBuffer, SwapChain swapChain, TextureManager textureManager, ViewportScissor viewportScissor, GpuBuffer vertexBuffer, GpuBuffer indexBuffer, int indexCount, GraphicsPipeline pipeline, int imageIndex, OrthographicCamera camera) {
+    public static void recordGraphicsCommands(MemoryStack stack, VkCommandBuffer commandBuffer, SwapChain swapChain, TextureManager textureManager, ViewportScissor viewportScissor, GpuBuffer vertexBuffer, GpuBuffer indexBuffer, int indexCount, GraphicsPipeline pipeline, int imageIndex, VkClearColorValue clearColorValue, OrthographicCamera camera) {
         // Acquire barrier
         VkImageMemoryBarrier2.Buffer imageBarrier = VkImageMemoryBarrier2.calloc(1, stack);
         imageBarrier.get(0)
@@ -49,13 +49,7 @@ public class RenderUtils {
 
         VK14.vkCmdPushConstants(commandBuffer, pipeline.getLayout(), VK14.VK_SHADER_STAGE_VERTEX_BIT, 0, camera.getBuffer());
 
-        VkClearValue clearValue = VkClearValue.calloc(stack)
-                .color(clear -> clear
-                        .float32(0, 0)
-                        .float32(1, 0)
-                        .float32(2, 0)
-                        .float32(3, 0)
-                );
+        VkClearValue clearValue = VkClearValue.calloc(stack).color(clearColorValue);
         VkRenderingAttachmentInfo.Buffer colorAttachments = VkRenderingAttachmentInfo.calloc(1, stack);
         colorAttachments.get(0)
                 .sType$Default()

@@ -13,6 +13,7 @@ public class WindowSettings {
     private boolean resizeable = true;
     private boolean vSyncEnabled = false;
     private int fpsCap = 1000;
+    private Color clearColor = new Color((byte) 0, (byte) 0, (byte) 0);
 
     public void setTextureFiles(TextureFile... textureFiles) {
         this.textureFiles = textureFiles;
@@ -49,6 +50,10 @@ public class WindowSettings {
         this.fpsCap = fpsCap;
     }
 
+    public void setClearColor(Color color) {
+        this.clearColor = color;
+    }
+
     public String getWindowName() {
         return this.windowName;
     }
@@ -83,5 +88,9 @@ public class WindowSettings {
 
     public TtfFile[] getTtfFiles() {
         return this.ttfFiles;
+    }
+
+    public Color getClearColor() {
+        return this.clearColor;
     }
 }

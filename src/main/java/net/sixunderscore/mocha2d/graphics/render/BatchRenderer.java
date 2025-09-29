@@ -3,6 +3,7 @@ package net.sixunderscore.mocha2d.graphics.render;
 import net.sixunderscore.mocha2d.graphics.textures.TextureManager;
 import net.sixunderscore.mocha2d.graphics.textures.TextureRegion;
 import net.sixunderscore.mocha2d.graphics.textures.UVs;
+import net.sixunderscore.mocha2d.util.Color;
 import net.sixunderscore.mocha2d.vulkan.util.*;
 import net.sixunderscore.mocha2d.vulkan.VulkanManager;
 import net.sixunderscore.mocha2d.util.OrthographicCamera;
@@ -38,8 +39,9 @@ public class BatchRenderer implements AutoCloseable {
     private final long[] inFlightFences;
 
     private final IntBuffer imageIndexBuffer;
+    private final VkClearColorValue clearColor;
 
-    public BatchRenderer(TextureManager textureManager, SwapChain swapChain) {
+    public BatchRenderer(TextureManager textureManager, SwapChain swapChain, Color clearColor) {
         this.swapChainImageCount = swapChain.getImageCount();
 
         this.commandBuffers = new VkCommandBuffer[FRAMES_IN_FLIGHT];
@@ -85,6 +87,11 @@ public class BatchRenderer implements AutoCloseable {
         }
 
         this.imageIndexBuffer = MemoryUtil.memAllocInt(1);
+        this.clearColor = VkClearColorValue.calloc()
+                .float32(0, clearColor.normalizedR())
+                .float32(1, clearColor.normalizedG())
+                .float32(2, clearColor.normalizedB())
+                .float32(3, 1f);
     }
 
     public void addSprite(TextureRegion texture, float x, float y, float width, float height) {
@@ -196,6 +203,7 @@ public class BatchRenderer implements AutoCloseable {
                     mappedStagingIndexBuffer.position(),
                     this.pipeline,
                     imageIndex,
+                    this.clearColor,
                     camera
             );
 
@@ -215,6 +223,13 @@ public class BatchRenderer implements AutoCloseable {
 
     public long[] getInFlightFences() {
         return this.inFlightFences;
+    }
+
+    public void setClearColor(Color color) {
+        this.clearColor
+                .float32(0, color.normalizedR())
+                .float32(1, color.normalizedG())
+                .float32(2, color.normalizedB());
     }
 
     @Override
@@ -243,5 +258,6 @@ public class BatchRenderer implements AutoCloseable {
         this.pipeline.close();
 
         MemoryUtil.memFree(this.imageIndexBuffer);
+        this.clearColor.close();
     }
 }

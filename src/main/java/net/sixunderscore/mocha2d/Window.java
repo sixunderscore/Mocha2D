@@ -76,7 +76,7 @@ public class Window {
         screen = initialScreen;
         screen.init(texManager);
         camera = new OrthographicCamera();
-        batch = new BatchRenderer(texManager, swapChain);
+        batch = new BatchRenderer(texManager, swapChain, settings.getClearColor());
         fpsHelper = new FpsHelper(settings.getFpsCap());
         deltaTime = new DeltaTime();
     }
@@ -134,6 +134,10 @@ public class Window {
         screen.cleanUp();
         screen = newScreen;
         screen.init(texManager);
+    }
+
+    public static void setClearColor(Color color) {
+        batch.setClearColor(color);
     }
 
     public static int getWidth() {
