@@ -86,8 +86,9 @@ public class TextureAtlas implements AutoCloseable {
     }
 
     public void recordUploadCommands(MemoryStack stack, VkCommandBuffer cmdBuffer, GpuBuffer stagingImageBuffer) {
-        VkImageMemoryBarrier2.Buffer preCopyBarrier = VkImageMemoryBarrier2.calloc(1, stack);
-        preCopyBarrier.get(0)
+        // Pre copy barrier
+        VkImageMemoryBarrier2.Buffer imageBarrier = VkImageMemoryBarrier2.calloc(1, stack);
+        imageBarrier.get(0)
                 .sType$Default()
                 .srcStageMask(VK14.VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT)
                 .dstStageMask(VK14.VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT)
@@ -99,12 +100,10 @@ public class TextureAtlas implements AutoCloseable {
                 .dstQueueFamilyIndex(VK14.VK_QUEUE_FAMILY_IGNORED)
                 .image(this.image)
                 .subresourceRange(s -> s.set(VK14.VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1));
-
-        VkDependencyInfo preCopyDependencyInfo = VkDependencyInfo.calloc(stack)
+        VkDependencyInfo dependencyInfo = VkDependencyInfo.calloc(stack)
                 .sType$Default()
-                .pImageMemoryBarriers(preCopyBarrier);
-
-        VK14.vkCmdPipelineBarrier2(cmdBuffer, preCopyDependencyInfo);
+                .pImageMemoryBarriers(imageBarrier);
+        VK14.vkCmdPipelineBarrier2(cmdBuffer, dependencyInfo);
 
         VkBufferImageCopy.Buffer imageCopy = VkBufferImageCopy.calloc(1, stack);
         imageCopy.get(0)
@@ -114,25 +113,15 @@ public class TextureAtlas implements AutoCloseable {
 
         VK14.vkCmdCopyBufferToImage(cmdBuffer, stagingImageBuffer.getBuffer(), this.image, VK14.VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, imageCopy);
 
-        VkImageMemoryBarrier2.Buffer postCopyBarrier = VkImageMemoryBarrier2.calloc(1, stack);
-        postCopyBarrier.get(0)
-                .sType$Default()
+        // Post copy barrier
+        imageBarrier.get(0)
                 .srcStageMask(VK14.VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT)
                 .dstStageMask(VK14.VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT)
                 .srcAccessMask(VK14.VK_ACCESS_2_TRANSFER_WRITE_BIT)
                 .dstAccessMask(VK14.VK_ACCESS_2_SHADER_READ_BIT)
                 .oldLayout(VK14.VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
-                .newLayout(VK14.VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
-                .srcQueueFamilyIndex(VK14.VK_QUEUE_FAMILY_IGNORED)
-                .dstQueueFamilyIndex(VK14.VK_QUEUE_FAMILY_IGNORED)
-                .image(this.image)
-                .subresourceRange(s -> s.set(VK14.VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1));
-
-        VkDependencyInfo postCopyDependencyInfo = VkDependencyInfo.calloc(stack)
-                .sType$Default()
-                .pImageMemoryBarriers(postCopyBarrier);
-
-        VK14.vkCmdPipelineBarrier2(cmdBuffer, postCopyDependencyInfo);
+                .newLayout(VK14.VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+        VK14.vkCmdPipelineBarrier2(cmdBuffer, dependencyInfo);
     }
 
     long getImageView() {
