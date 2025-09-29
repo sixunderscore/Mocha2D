@@ -1,7 +1,6 @@
-package net.sixunderscore.mocha2d.graphics.textures;
+package net.sixunderscore.mocha2d.util;
 
-import net.sixunderscore.mocha2d.util.Color;
-import net.sixunderscore.mocha2d.util.ResourceLoader;
+import net.sixunderscore.mocha2d.graphics.textures.TextureData;
 import net.sixunderscore.mocha2d.vulkan.util.GpuBuffer;
 import org.lwjgl.stb.STBImage;
 import org.lwjgl.system.MemoryStack;
@@ -9,11 +8,25 @@ import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.util.vma.Vma;
 import org.lwjgl.vulkan.VK14;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.ByteBuffer;
 
-public class TextureUtils {
+public class ResourceUtils {
+    public static ByteBuffer loadRawFile(String path) {
+        try (InputStream stream = Thread.currentThread().getContextClassLoader().getResourceAsStream(path)) {
+            if (stream == null) {
+                throw new IllegalStateException("File " + path + " not found");
+            }
+
+            return MemoryUtil.memAlloc(stream.available()).put(stream.readAllBytes()).flip();
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to load file: " + path + ": " + e);
+        }
+    }
+
     public static TextureData loadAndDecodeImage(String imagePath) {
-        ByteBuffer rawImage = ResourceLoader.loadRawFile(imagePath);
+        ByteBuffer rawImage = ResourceUtils.loadRawFile(imagePath);
         int[] width = new int[1];
         int[] height = new int[1];
         int[] channels = new int[1];

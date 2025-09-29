@@ -3,7 +3,6 @@ package net.sixunderscore.mocha2d;
 import net.sixunderscore.mocha2d.graphics.render.BatchRenderer;
 import net.sixunderscore.mocha2d.graphics.textures.TextureData;
 import net.sixunderscore.mocha2d.graphics.textures.TextureManager;
-import net.sixunderscore.mocha2d.graphics.textures.TextureUtils;
 import net.sixunderscore.mocha2d.util.*;
 import net.sixunderscore.mocha2d.util.FpsHelper;
 import net.sixunderscore.mocha2d.util.Screen;
@@ -106,7 +105,7 @@ public class Window {
 
     private static void setWindowIcon(String path) {
         if (!path.isEmpty()) {
-            try (TextureData textureData = TextureUtils.loadAndDecodeImage(path);
+            try (TextureData textureData = ResourceUtils.loadAndDecodeImage(path);
                  GLFWImage.Buffer icons = GLFWImage.malloc(1)) {
                 icons.get(0).set(textureData.width(), textureData.height(), textureData.data());
 

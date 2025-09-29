@@ -7,7 +7,7 @@ import net.sixunderscore.mocha2d.graphics.text.TextData;
 import net.sixunderscore.mocha2d.graphics.text.TextRenderer;
 import net.sixunderscore.mocha2d.vulkan.util.GpuBuffer;
 import net.sixunderscore.mocha2d.vulkan.VulkanManager;
-import net.sixunderscore.mocha2d.util.ResourceLoader;
+import net.sixunderscore.mocha2d.util.ResourceUtils;
 import net.sixunderscore.mocha2d.graphics.text.TtfFile;
 import org.lwjgl.stb.STBTTBakedChar;
 import org.lwjgl.stb.STBTTFontinfo;
@@ -194,9 +194,9 @@ public class TextureManager implements AutoCloseable {
     }
 
     private TextureAtlas createTextureAtlas(MemoryStack stack, VkCommandBuffer commandBuffer, TextureFile file, int textureIndex, List<GpuBuffer> stagingBuffersToFree) {
-        try (TextureData textureData = TextureUtils.loadAndDecodeImage(file.path())) {
+        try (TextureData textureData = ResourceUtils.loadAndDecodeImage(file.path())) {
             TextureAtlas atlas = new TextureAtlas(textureData.width(), textureData.height(), file.isPixelated(), textureIndex);
-            GpuBuffer stagingImageBuffer = TextureUtils.createStagingImageBuffer(stack, textureData);
+            GpuBuffer stagingImageBuffer = ResourceUtils.createStagingImageBuffer(stack, textureData);
 
             // Upload data from staging buffer to GPU memory
             atlas.recordUploadCommands(stack, commandBuffer, stagingImageBuffer);
@@ -209,7 +209,7 @@ public class TextureManager implements AutoCloseable {
 
     private TextRenderer createTextRenderer(MemoryStack stack, VkCommandBuffer commandBuffer, TtfFile file, int textureIndex, List<GpuBuffer> stagingBuffersToFree) {
         STBTTFontinfo fontInfo = STBTTFontinfo.malloc(stack);
-        ByteBuffer ttfFileData = ResourceLoader.loadRawFile(file.path());
+        ByteBuffer ttfFileData = ResourceUtils.loadRawFile(file.path());
 
         if (!STBTruetype.stbtt_InitFont(fontInfo, ttfFileData)) {
             throw new IllegalStateException("Unable to initialize font: " + file.path());
@@ -228,9 +228,9 @@ public class TextureManager implements AutoCloseable {
         MemoryUtil.memFree(ttfFileData);
 
         // Convert to RGBA
-        try (TextureData textureData = TextureUtils.convertGrayscaleToRGBA(grayscaleImageBuffer, grayscaleSideSize, grayscaleTotalSize, file.fontColor())) {
+        try (TextureData textureData = ResourceUtils.convertGrayscaleToRGBA(grayscaleImageBuffer, grayscaleSideSize, grayscaleTotalSize, file.fontColor())) {
             TextureAtlas fontAtlas = new TextureAtlas(textureData.width(), textureData.height(), false, textureIndex);
-            GpuBuffer stagingImageBuffer = TextureUtils.createStagingImageBuffer(stack, textureData);
+            GpuBuffer stagingImageBuffer = ResourceUtils.createStagingImageBuffer(stack, textureData);
 
             // Upload data from staging buffer to GPU memory
             fontAtlas.recordUploadCommands(stack, commandBuffer, stagingImageBuffer);

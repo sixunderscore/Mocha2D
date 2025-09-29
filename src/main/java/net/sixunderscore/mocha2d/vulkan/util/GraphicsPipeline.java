@@ -3,7 +3,7 @@ package net.sixunderscore.mocha2d.vulkan.util;
 import net.sixunderscore.mocha2d.graphics.render.VertexData;
 import net.sixunderscore.mocha2d.graphics.textures.TextureManager;
 import net.sixunderscore.mocha2d.vulkan.VulkanManager;
-import net.sixunderscore.mocha2d.util.ResourceLoader;
+import net.sixunderscore.mocha2d.util.ResourceUtils;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.*;
 
@@ -38,8 +38,8 @@ public class GraphicsPipeline implements AutoCloseable {
     }
 
     private long createPipeline(MemoryStack stack, TextureManager textureManager, SwapChain swapChain, String vertexShaderPath, String fragmentShaderPath) {
-        long vertexShader = createShaderModule(stack, ResourceLoader.loadRawFile(vertexShaderPath));
-        long fragmentShader = createShaderModule(stack, ResourceLoader.loadRawFile(fragmentShaderPath));
+        long vertexShader = createShaderModule(stack, ResourceUtils.loadRawFile(vertexShaderPath));
+        long fragmentShader = createShaderModule(stack, ResourceUtils.loadRawFile(fragmentShaderPath));
 
         VkPipelineShaderStageCreateInfo.Buffer shaderStageCreateInfos = VkPipelineShaderStageCreateInfo.calloc(2, stack);
         shaderStageCreateInfos.get(0)

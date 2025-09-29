@@ -28,8 +28,9 @@ public class RenderUtils {
     }
 
     public static void recordGraphicsCommands(MemoryStack stack, VkCommandBuffer commandBuffer, SwapChain swapChain, TextureManager textureManager, ViewportScissor viewportScissor, GpuBuffer vertexBuffer, GpuBuffer indexBuffer, int indexCount, GraphicsPipeline pipeline, int imageIndex, OrthographicCamera camera) {
-        VkImageMemoryBarrier2.Buffer imageBarriers = VkImageMemoryBarrier2.calloc(2, stack);
-        imageBarriers.get(0)
+        // Acquire barrier
+        VkImageMemoryBarrier2.Buffer imageBarrier = VkImageMemoryBarrier2.calloc(1, stack);
+        imageBarrier.get(0)
                 .sType$Default()
                 .srcStageMask(VK14.VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT)
                 .dstStageMask(VK14.VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT)
@@ -41,21 +42,9 @@ public class RenderUtils {
                 .dstQueueFamilyIndex(VK14.VK_QUEUE_FAMILY_IGNORED)
                 .image(swapChain.getImage(imageIndex))
                 .subresourceRange(s -> s.set(VK14.VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1));
-        imageBarriers.get(1)
-                .sType$Default()
-                .srcStageMask(VK14.VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT)
-                .dstStageMask(VK14.VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT)
-                .srcAccessMask(VK14.VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT)
-                .dstAccessMask(VK14.VK_ACCESS_2_NONE)
-                .oldLayout(VK14.VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
-                .newLayout(KHRSwapchain.VK_IMAGE_LAYOUT_PRESENT_SRC_KHR)
-                .srcQueueFamilyIndex(VK14.VK_QUEUE_FAMILY_IGNORED)
-                .dstQueueFamilyIndex(VK14.VK_QUEUE_FAMILY_IGNORED)
-                .image(swapChain.getImage(imageIndex))
-                .subresourceRange(s -> s.set(VK14.VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1));
         VkDependencyInfo barrierDependencyInfo = VkDependencyInfo.calloc(stack)
                 .sType$Default()
-                .pImageMemoryBarriers(imageBarriers);
+                .pImageMemoryBarriers(imageBarrier);
         VK14.vkCmdPipelineBarrier2(commandBuffer, barrierDependencyInfo);
 
         VK14.vkCmdPushConstants(commandBuffer, pipeline.getLayout(), VK14.VK_SHADER_STAGE_VERTEX_BIT, 0, camera.getBuffer());
@@ -92,6 +81,16 @@ public class RenderUtils {
         VK14.vkCmdDrawIndexed(commandBuffer, indexCount, 1, 0, 0, 0);
 
         VK14.vkCmdEndRendering(commandBuffer);
+
+        // Present barrier
+        imageBarrier.get(0)
+                .srcStageMask(VK14.VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT)
+                .dstStageMask(VK14.VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT)
+                .srcAccessMask(VK14.VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT)
+                .dstAccessMask(VK14.VK_ACCESS_2_NONE)
+                .oldLayout(VK14.VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
+                .newLayout(KHRSwapchain.VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+        VK14.vkCmdPipelineBarrier2(commandBuffer, barrierDependencyInfo);
     }
 
     public static void submitCommandBuffer(MemoryStack stack, VkCommandBuffer commandBuffer, long waitSemaphore, long signalSemaphore, long signalFence) {
