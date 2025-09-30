@@ -26,6 +26,10 @@ public class KeyListener {
     }
 
     private void handleCharTyping(long window, int codepoint) {
+        if (this.typedChars.size() >= 50) {
+            this.typedChars.poll();
+        }
+
         this.typedChars.add((char) codepoint);
     }
 
