@@ -26,10 +26,6 @@ public class KeyListener {
     }
 
     private void handleCharTyping(long window, int codepoint) {
-        if (this.typedChars.size() >= 50) {
-            this.typedChars.poll();
-        }
-
         this.typedChars.add((char) codepoint);
     }
 
@@ -45,7 +41,11 @@ public class KeyListener {
         return !this.pressedKeys.isEmpty();
     }
 
-    public char getTypedChar() {
-        return this.typedChars.isEmpty() ? '\0' : this.typedChars.poll();
+    public char consumeNextTypedChar() {
+        return !this.typedChars.isEmpty() ? this.typedChars.poll() : '\0';
+    }
+
+    public boolean hasTypedChars() {
+        return !this.typedChars.isEmpty();
     }
 }
