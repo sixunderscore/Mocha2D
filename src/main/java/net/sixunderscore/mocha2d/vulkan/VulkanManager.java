@@ -20,7 +20,7 @@ public class VulkanManager {
 
     public static void init() {
         try (MemoryStack stack = MemoryStack.stackPush()) {
-            instance = createInstance(stack, false);
+            instance = createInstance(stack, true);
             VkPhysicalDevice physicalDevice = pickPhysicalDevice(stack);
             graphicsQueueFamilyIndex = findGraphicsQueueFamilyIndex(stack, physicalDevice);
             logicalDevice = createLogicalDevice(stack, physicalDevice);
