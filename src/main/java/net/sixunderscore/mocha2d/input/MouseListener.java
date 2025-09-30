@@ -5,7 +5,8 @@ import org.lwjgl.glfw.GLFW;
 
 public class MouseListener {
     private final Vector2d mousePos = new Vector2d();
-    private double scrollXOffset, scrollYOffset;
+    private double scrollXOffset;
+    private double scrollYOffset;
     private boolean leftButtonPressed = false;
     private boolean rightButtonPressed = false;
 

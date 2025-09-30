@@ -29,7 +29,7 @@ public class TextRenderer implements AutoCloseable {
             STBTTBakedChar charData = charsData.get(i++);
 
             this.textureRegionMap.put(c, this.fontAtlas.getRegion(charData.x0(), charData.x1(), charData.y0(), charData.y1()));
-            this.glyphDataMap.put(c, new GlyphData(this.getCharDescent(fontInfo, c, fontScale), charData.xadvance()));
+            this.glyphDataMap.put(c, new GlyphData(0, charData.xadvance()));
         }
     }
 
@@ -39,11 +39,9 @@ public class TextRenderer implements AutoCloseable {
         int[] x1 = new int[1];
         int[] y1 = new int[1];
 
-        if (STBTruetype.stbtt_GetCodepointBox(fontInfo, codepoint, x0, y0, x1, y1)) {
-            return y0[0] * fontScale;
-        }
+        STBTruetype.stbtt_GetCodepointBox(fontInfo, codepoint, x0, y0, x1, y1);
 
-        return 0;
+        return (float) y1[0] * fontScale;
     }
 
     public void renderText(BatchRenderer batch, String text, float x, float y, float charScale) {
