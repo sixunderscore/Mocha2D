@@ -3,8 +3,8 @@ package net.sixunderscore.mocha2d;
 import net.sixunderscore.mocha2d.enginesamples.SampleScreen;
 import net.sixunderscore.mocha2d.graphics.text.FontBitmapResolution;
 import net.sixunderscore.mocha2d.util.Color;
-import net.sixunderscore.mocha2d.graphics.textures.TextureFile;
-import net.sixunderscore.mocha2d.graphics.text.TtfFile;
+import net.sixunderscore.mocha2d.util.TextureFile;
+import net.sixunderscore.mocha2d.util.TtfFile;
 import net.sixunderscore.mocha2d.util.WindowSettings;
 
 public class Main {

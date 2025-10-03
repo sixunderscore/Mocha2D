@@ -1,6 +1,7 @@
 package net.sixunderscore.mocha2d.graphics.textures;
 
 import net.sixunderscore.mocha2d.graphics.text.FontBitmapResolution;
+import net.sixunderscore.mocha2d.util.TextureFile;
 import net.sixunderscore.mocha2d.vulkan.util.CommandPool;
 import net.sixunderscore.mocha2d.vulkan.util.SyncUtils;
 import net.sixunderscore.mocha2d.graphics.text.TextData;
@@ -8,7 +9,7 @@ import net.sixunderscore.mocha2d.graphics.text.TextRenderer;
 import net.sixunderscore.mocha2d.vulkan.util.GpuBuffer;
 import net.sixunderscore.mocha2d.vulkan.VulkanManager;
 import net.sixunderscore.mocha2d.util.ResourceUtils;
-import net.sixunderscore.mocha2d.graphics.text.TtfFile;
+import net.sixunderscore.mocha2d.util.TtfFile;
 import org.lwjgl.stb.STBTTBakedChar;
 import org.lwjgl.stb.STBTTFontinfo;
 import org.lwjgl.stb.STBTruetype;
@@ -225,7 +226,6 @@ public class TextureManager implements AutoCloseable {
         ByteBuffer grayscaleImageBuffer = MemoryUtil.memAlloc(grayscaleTotalSize);
         STBTTBakedChar.Buffer charData = STBTTBakedChar.malloc(TextData.NUM_CHARS, stack);
         STBTruetype.stbtt_BakeFontBitmap(ttfFileData, charResolution, grayscaleImageBuffer, grayscaleSideSize, grayscaleSideSize, TextData.FIRST_CHAR, charData);
-        MemoryUtil.memFree(ttfFileData);
 
         // Convert to RGBA
         try (TextureData textureData = ResourceUtils.convertGrayscaleToRGBA(grayscaleImageBuffer, grayscaleSideSize, grayscaleTotalSize, file.fontColor())) {
@@ -238,6 +238,7 @@ public class TextureManager implements AutoCloseable {
             TextRenderer textRenderer = new TextRenderer(fontAtlas, charResolution, charData, fontInfo);
 
             MemoryUtil.memFree(grayscaleImageBuffer);
+            MemoryUtil.memFree(ttfFileData);
             stagingBuffersToFree.add(stagingImageBuffer);
 
             return textRenderer;

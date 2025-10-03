@@ -1,8 +1,5 @@
 package net.sixunderscore.mocha2d.util;
 
-import net.sixunderscore.mocha2d.graphics.text.TtfFile;
-import net.sixunderscore.mocha2d.graphics.textures.TextureFile;
-
 public class WindowSettings {
     private TextureFile[] textureFiles = new TextureFile[0];
     private TtfFile[] ttfFiles = new TtfFile[0];
