@@ -13,12 +13,12 @@ import java.nio.IntBuffer;
 public class TextRenderer implements AutoCloseable {
     private final TextureAtlas fontAtlas;
     private final GlyphData[] glyphDataArr;
-    private final int spaceAdvance;
+    private final int charResolution;
 
     public TextRenderer(TextureAtlas textureAtlas, int charResolution, STBTTBakedChar.Buffer charsData, STBTTFontinfo fontInfo) {
         this.fontAtlas = textureAtlas;
         this.glyphDataArr = new GlyphData[TextData.NUM_CHARS];
-        this.spaceAdvance = charResolution;
+        this.charResolution = charResolution;
         this.loadTextureRegionsAndGlyphData(charsData, fontInfo, charResolution);
     }
 
@@ -49,23 +49,29 @@ public class TextRenderer implements AutoCloseable {
 
     public void renderText(BatchRenderer batch, String text, float x, float y, float charScale) {
         float xPos = x;
+        float yPos = y;
         int strLength = text.length();
 
         for (int i = 0; i < strLength; ++i) {
             char c = text.charAt(i);
 
-            if (c == ' ') {
-                xPos += (this.spaceAdvance * charScale) / 2.5f;
-                continue;
+            switch (c) {
+                case ' ' -> xPos += (this.charResolution * charScale) / 2.5f;
+                case '\t' -> xPos += (this.charResolution * charScale) * 1.5f;
+                case '\n' -> {
+                    xPos = x;
+                    yPos -= this.charResolution * charScale;
+                }
+                default -> {
+                    int arrayIndex = c - TextData.FIRST_CHAR;
+                    GlyphData glyphData = arrayIndex >= 0 && arrayIndex < TextData.NUM_CHARS ? this.glyphDataArr[arrayIndex] : this.glyphDataArr['?' - TextData.FIRST_CHAR];
+                    TextureRegion textureRegion = glyphData.textureRegion();
+
+                    batch.addSprite(textureRegion, xPos, yPos + glyphData.descent() * charScale, textureRegion.width() * charScale, textureRegion.height() * charScale);
+
+                    xPos += glyphData.advance() * charScale;
+                }
             }
-
-            int arrayIndex = c - TextData.FIRST_CHAR;
-            GlyphData glyphData = arrayIndex >= 0 && arrayIndex < TextData.NUM_CHARS ? this.glyphDataArr[arrayIndex] : this.glyphDataArr['?' - TextData.FIRST_CHAR];
-            TextureRegion textureRegion = glyphData.textureRegion();
-
-            batch.addSprite(textureRegion, xPos, y + glyphData.descent() * charScale, textureRegion.width() * charScale, textureRegion.height() * charScale);
-
-            xPos += glyphData.advance() * charScale;
         }
     }
 
