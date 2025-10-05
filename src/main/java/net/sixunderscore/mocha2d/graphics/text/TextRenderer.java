@@ -9,16 +9,15 @@ import org.lwjgl.stb.STBTruetype;
 import org.lwjgl.system.MemoryStack;
 
 import java.nio.IntBuffer;
-import java.util.HashMap;
-import java.util.Map;
 
 public class TextRenderer implements AutoCloseable {
     private final TextureAtlas fontAtlas;
-    private final Map<Character, GlyphData> glyphDataMap = new HashMap<>(TextData.NUM_CHARS);
+    private final GlyphData[] glyphDataArr;
     private final int spaceAdvance;
 
     public TextRenderer(TextureAtlas textureAtlas, int charResolution, STBTTBakedChar.Buffer charsData, STBTTFontinfo fontInfo) {
         this.fontAtlas = textureAtlas;
+        this.glyphDataArr = new GlyphData[TextData.NUM_CHARS];
         this.spaceAdvance = charResolution;
         this.loadTextureRegionsAndGlyphData(charsData, fontInfo, charResolution);
     }
@@ -26,13 +25,13 @@ public class TextRenderer implements AutoCloseable {
     private void loadTextureRegionsAndGlyphData(STBTTBakedChar.Buffer charsData, STBTTFontinfo fontInfo, int charResolution) {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             float fontScale = STBTruetype.stbtt_ScaleForPixelHeight(fontInfo, charResolution);
-            int i = 0;
 
             for (char c = TextData.FIRST_CHAR; c <= TextData.LAST_CHAR; ++c) {
-                STBTTBakedChar charData = charsData.get(i++);
+                int index = c - TextData.FIRST_CHAR;
+                STBTTBakedChar charData = charsData.get(index);
                 TextureRegion charTextureRegion = this.fontAtlas.getRegion(charData.x0(), charData.x1(), charData.y0(), charData.y1());
 
-                this.glyphDataMap.put(c, new GlyphData(charTextureRegion, this.getCharDescent(stack, fontInfo, c, fontScale), charData.xadvance()));
+                this.glyphDataArr[index] = new GlyphData(charTextureRegion, this.getCharDescent(stack, fontInfo, c, fontScale), charData.xadvance());
             }
         }
     }
@@ -60,15 +59,13 @@ public class TextRenderer implements AutoCloseable {
                 continue;
             }
 
-            GlyphData glyphData = this.glyphDataMap.get(c);
+            int arrayIndex = c - TextData.FIRST_CHAR;
+            GlyphData glyphData = arrayIndex >= 0 && arrayIndex < TextData.NUM_CHARS ? this.glyphDataArr[arrayIndex] : this.glyphDataArr['?' - TextData.FIRST_CHAR];
+            TextureRegion textureRegion = glyphData.textureRegion();
 
-            if (glyphData != null) {
-                TextureRegion textureRegion = glyphData.textureRegion();
+            batch.addSprite(textureRegion, xPos, y + glyphData.descent() * charScale, textureRegion.width() * charScale, textureRegion.height() * charScale);
 
-                batch.addSprite(textureRegion, xPos, y + glyphData.descent() * charScale, textureRegion.width() * charScale, textureRegion.height() * charScale);
-
-                xPos += glyphData.advance() * charScale;
-            }
+            xPos += glyphData.advance() * charScale;
         }
     }
 
