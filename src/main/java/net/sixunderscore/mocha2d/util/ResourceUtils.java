@@ -26,7 +26,7 @@ public class ResourceUtils {
     }
 
     public static TextureData loadAndDecodeImage(String imagePath) {
-        ByteBuffer rawImage = ResourceUtils.loadRawFile(imagePath);
+        ByteBuffer rawImage = loadRawFile(imagePath);
         int[] width = new int[1];
         int[] height = new int[1];
         int[] channels = new int[1];
