@@ -145,7 +145,7 @@ public class FrameResources implements AutoCloseable {
         VK14.vkQueueSubmit2(VulkanManager.getGraphicsQueue(), submitInfo, signalFence);
     }
 
-    public void presentImageToSwapChain(MemoryStack stack, SwapChain swapChain, IntBuffer imageIndex, long waitSemaphore) {
+    public void presentImageToSwapChain(MemoryStack stack, long waitSemaphore, SwapChain swapChain, IntBuffer imageIndex) {
         VkPresentInfoKHR presentInfo = VkPresentInfoKHR.calloc(stack)
                 .sType$Default()
                 .pImageIndices(imageIndex)

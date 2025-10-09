@@ -161,7 +161,7 @@ public class BatchRenderer implements AutoCloseable {
 
             long renderFinishedSemaphore = this.renderFinishedSemaphores[imageIndex];
             frameResources.submitCommandBuffer(stack, imageAvailableSemaphore, renderFinishedSemaphore, inFlightFence);
-            frameResources.presentImageToSwapChain(stack, swapChain, this.imageIndexBuffer, renderFinishedSemaphore);
+            frameResources.presentImageToSwapChain(stack, renderFinishedSemaphore, swapChain, this.imageIndexBuffer);
 
             frameResources.resetMappedBuffers();
             this.indexOffset = 0;
