@@ -42,6 +42,10 @@ public class CommandPool implements AutoCloseable {
         return new VkCommandBuffer(commandBufferPtr.get(0), VulkanManager.getLogicalDevice());
     }
 
+    public long getPool() {
+        return this.pool;
+    }
+
     @Override
     public void close() {
         VK14.vkDestroyCommandPool(VulkanManager.getLogicalDevice(), this.pool, null);

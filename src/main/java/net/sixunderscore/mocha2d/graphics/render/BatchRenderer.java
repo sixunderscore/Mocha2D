@@ -15,44 +15,25 @@ import org.lwjgl.vulkan.*;
 
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
-import java.nio.ShortBuffer;
 
 public class BatchRenderer implements AutoCloseable {
-    private static final int FRAMES_IN_FLIGHT = 2;
-    private final int swapChainImageCount;
-    private int frameIndex = 0;
+    private final int framesInFlight;
+    private int frameInFlightIndex;
     private final GraphicsPipeline pipeline;
-    private final CommandPool commandPool;
-    private final VkCommandBuffer[] commandBuffers;
-
-    private final GpuBuffer[] stagingVertexBuffers;
-    private final FloatBuffer[] mappedStagingVertexBuffers;
     private final GpuBuffer vertexBuffer;
-
-    private final GpuBuffer[] stagingIndexBuffers;
-    private final ShortBuffer[] mappedStagingIndexBuffers;
     private final GpuBuffer indexBuffer;
-    private int indexOffset = 0;
-
+    private final FrameResources[] frameResources;
     private final long[] imageAvailableSemaphores;
     private final long[] renderFinishedSemaphores;
     private final long[] inFlightFences;
-
+    private int indexOffset;
     private final IntBuffer imageIndexBuffer;
     private final VkClearColorValue clearColor;
 
     public BatchRenderer(TextureManager textureManager, SwapChain swapChain, Color clearColor) {
-        this.swapChainImageCount = swapChain.getImageCount();
-
-        this.commandBuffers = new VkCommandBuffer[FRAMES_IN_FLIGHT];
-        this.stagingVertexBuffers = new GpuBuffer[FRAMES_IN_FLIGHT];
-        this.mappedStagingVertexBuffers = new FloatBuffer[FRAMES_IN_FLIGHT];
-        this.stagingIndexBuffers = new GpuBuffer[FRAMES_IN_FLIGHT];
-        this.mappedStagingIndexBuffers = new ShortBuffer[FRAMES_IN_FLIGHT];
-
-        this.imageAvailableSemaphores = new long[FRAMES_IN_FLIGHT];
-        this.renderFinishedSemaphores = new long[this.swapChainImageCount];
-        this.inFlightFences = new long[FRAMES_IN_FLIGHT];
+        this.framesInFlight = swapChain.getImageCount();
+        this.frameInFlightIndex = 0;
+        this.indexOffset = 0;
 
         try (MemoryStack stack = MemoryStack.stackPush()) {
             int maxQuads = 0xFFFF / 4; // Unsigned short max value divided by 4 vertices in a quad
@@ -64,23 +45,16 @@ public class BatchRenderer implements AutoCloseable {
 
             this.indexBuffer = new GpuBuffer(stack, indexBufferSizeBytes, VK14.VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK14.VK_BUFFER_USAGE_INDEX_BUFFER_BIT, Vma.VMA_MEMORY_USAGE_GPU_ONLY);
             this.vertexBuffer = new GpuBuffer(stack, vertexBufferSizeBytes, VK14.VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK14.VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, Vma.VMA_MEMORY_USAGE_GPU_ONLY);
+            this.frameResources = new FrameResources[this.framesInFlight];
+            this.imageAvailableSemaphores = new long[this.framesInFlight];
+            this.renderFinishedSemaphores = new long[this.framesInFlight];
+            this.inFlightFences = new long[this.framesInFlight];
 
-            this.commandPool = new CommandPool(stack, VulkanManager.getGraphicsQueueIndex(), VK14.VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-
-            for (int i = 0; i < FRAMES_IN_FLIGHT; ++i) {
-                this.commandBuffers[i] = this.commandPool.allocateCommandBuffer(stack);
-
-                this.stagingIndexBuffers[i] = new GpuBuffer(stack, indexBufferSizeBytes, VK14.VK_BUFFER_USAGE_TRANSFER_SRC_BIT, Vma.VMA_MEMORY_USAGE_CPU_TO_GPU);
-                this.mappedStagingIndexBuffers[i] = this.stagingIndexBuffers[i].map(stack).asShortBuffer();
-                this.stagingVertexBuffers[i] = new GpuBuffer(stack, vertexBufferSizeBytes, VK14.VK_BUFFER_USAGE_TRANSFER_SRC_BIT, Vma.VMA_MEMORY_USAGE_CPU_TO_GPU);
-                this.mappedStagingVertexBuffers[i] = this.stagingVertexBuffers[i].map(stack).asFloatBuffer();
-
+            for (int i = 0; i < this.framesInFlight; ++i) {
+                this.frameResources[i] = new FrameResources(stack, indexBufferSizeBytes, vertexBufferSizeBytes);
                 this.imageAvailableSemaphores[i] = SyncUtils.createSemaphore(stack);
-                this.inFlightFences[i] = SyncUtils.createFence(stack, true);
-            }
-
-            for (int i = 0; i < this.swapChainImageCount; ++i) {
                 this.renderFinishedSemaphores[i] = SyncUtils.createSemaphore(stack);
+                this.inFlightFences[i] = SyncUtils.createFence(stack, true);
             }
 
             this.pipeline = new GraphicsPipeline(stack, textureManager, swapChain, "assets/shaders/vertex.spv", "assets/shaders/fragment.spv");
@@ -99,7 +73,9 @@ public class BatchRenderer implements AutoCloseable {
     }
 
     public void addSprite(TextureRegion texture, float x, float y, float width, float height, float rotationDegrees, float pivotX, float pivotY) {
-        this.mappedStagingIndexBuffers[this.frameIndex]
+        FrameResources frameResources = this.frameResources[this.frameInFlightIndex];
+
+        frameResources.getMappedStagingIndexBuffer()
                 .put((short) this.indexOffset)        // Top-left
                 .put((short) (this.indexOffset + 1))  // Top-right
                 .put((short) (this.indexOffset + 2))  // Bottom-left
@@ -110,7 +86,7 @@ public class BatchRenderer implements AutoCloseable {
 
         this.indexOffset += 4;
 
-        FloatBuffer stagingVertexBuffer = this.mappedStagingVertexBuffers[this.frameIndex];
+        FloatBuffer stagingVertexBuffer = frameResources.getMappedStagingVertexBuffer();
 
         // UV data
         UVs uvCoordinates = texture.uvCoordinates();
@@ -159,65 +135,37 @@ public class BatchRenderer implements AutoCloseable {
 
     public void draw(OrthographicCamera camera, SwapChain swapChain, TextureManager textureManager, ViewportScissor viewportScissor) {
         try (MemoryStack stack = MemoryStack.stackPush()) {
-            long inFlightFence = this.inFlightFences[this.frameIndex];
+            long inFlightFence = this.inFlightFences[this.frameInFlightIndex];
 
             VK14.vkWaitForFences(VulkanManager.getLogicalDevice(), inFlightFence, true, Long.MAX_VALUE);
             VK14.vkResetFences(VulkanManager.getLogicalDevice(), inFlightFence);
 
-            long imageAvailableSemaphore = this.imageAvailableSemaphores[this.frameIndex];
+            FrameResources frameResources = this.frameResources[this.frameInFlightIndex];
+            long imageAvailableSemaphore = this.imageAvailableSemaphores[this.frameInFlightIndex];
 
             KHRSwapchain.vkAcquireNextImageKHR(VulkanManager.getLogicalDevice(), swapChain.getSwapChain(), Long.MAX_VALUE, imageAvailableSemaphore, VK14.VK_NULL_HANDLE, this.imageIndexBuffer);
             int imageIndex = this.imageIndexBuffer.get(0);
 
-            FloatBuffer mappedStagingVertexBuffer = this.mappedStagingVertexBuffers[this.frameIndex];
-            int vertexBufferUsedSizeBytes = mappedStagingVertexBuffer.position() * Float.BYTES;
-            ShortBuffer mappedStagingIndexBuffer = this.mappedStagingIndexBuffers[this.frameIndex];
-            int indexBufferUsedSizeBytes = mappedStagingIndexBuffer.position() * Short.BYTES;
-
-            VkCommandBuffer commandBuffer = this.commandBuffers[this.frameIndex];
-
-            VK14.vkResetCommandBuffer(commandBuffer, 0);
-            VkCommandBufferBeginInfo commandBufferBeginInfo = VkCommandBufferBeginInfo.calloc(stack)
-                    .sType$Default()
-                    .flags(VK14.VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-            VK14.vkBeginCommandBuffer(commandBuffer, commandBufferBeginInfo);
-
-            RenderUtils.recordTransferCommands(
+            frameResources.recordGraphicsAndTransferCommands(
                     stack,
-                    commandBuffer,
-                    this.stagingIndexBuffers[this.frameIndex],
                     this.indexBuffer,
-                    indexBufferUsedSizeBytes,
-                    this.stagingVertexBuffers[this.frameIndex],
                     this.vertexBuffer,
-                    vertexBufferUsedSizeBytes
-            );
-            RenderUtils.recordGraphicsCommands(
-                    stack,
-                    commandBuffer,
                     swapChain,
                     textureManager,
                     viewportScissor,
-                    this.vertexBuffer,
-                    this.indexBuffer,
-                    mappedStagingIndexBuffer.position(),
                     this.pipeline,
                     imageIndex,
                     this.clearColor,
                     camera
             );
 
-            VK14.vkEndCommandBuffer(commandBuffer);
-
             long renderFinishedSemaphore = this.renderFinishedSemaphores[imageIndex];
+            frameResources.submitCommandBuffer(stack, imageAvailableSemaphore, renderFinishedSemaphore, inFlightFence);
+            frameResources.presentImageToSwapChain(stack, swapChain, this.imageIndexBuffer, renderFinishedSemaphore);
 
-            RenderUtils.submitCommandBuffer(stack, commandBuffer, imageAvailableSemaphore, renderFinishedSemaphore, inFlightFence);
-            RenderUtils.presentImageToSwapChain(stack, swapChain, this.imageIndexBuffer, renderFinishedSemaphore);
-
-            mappedStagingVertexBuffer.clear();
-            mappedStagingIndexBuffer.clear();
+            frameResources.resetMappedBuffers();
             this.indexOffset = 0;
-            this.frameIndex = ++this.frameIndex % FRAMES_IN_FLIGHT;
+            this.frameInFlightIndex = ++this.frameInFlightIndex % this.framesInFlight;
         }
     }
 
@@ -235,24 +183,18 @@ public class BatchRenderer implements AutoCloseable {
     @Override
     public void close() {
         VkDevice logicalDevice = VulkanManager.getLogicalDevice();
+
         VK14.vkWaitForFences(logicalDevice, this.inFlightFences, true, Long.MAX_VALUE);
         VK14.vkQueueWaitIdle(VulkanManager.getGraphicsQueue());
-
-        this.commandPool.close();
 
         this.vertexBuffer.close();
         this.indexBuffer.close();
 
-        for (int i = 0; i < FRAMES_IN_FLIGHT; ++i) {
-            this.stagingVertexBuffers[i].close();
-            this.stagingIndexBuffers[i].close();
-
-            VK14.vkDestroyFence(logicalDevice, this.inFlightFences[i], null);
+        for (int i = 0; i < this.framesInFlight; ++i) {
+            this.frameResources[i].close();
             VK14.vkDestroySemaphore(logicalDevice, this.imageAvailableSemaphores[i], null);
-        }
-
-        for (int i = 0; i < this.swapChainImageCount; ++i) {
             VK14.vkDestroySemaphore(logicalDevice, this.renderFinishedSemaphores[i], null);
+            VK14.vkDestroyFence(logicalDevice, this.inFlightFences[i], null);
         }
 
         this.pipeline.close();
