@@ -140,11 +140,14 @@ public class BatchRenderer implements AutoCloseable {
             VK14.vkWaitForFences(VulkanManager.getLogicalDevice(), inFlightFence, true, Long.MAX_VALUE);
             VK14.vkResetFences(VulkanManager.getLogicalDevice(), inFlightFence);
 
-            FrameResources frameResources = this.frameResources[this.frameInFlightIndex];
             long imageAvailableSemaphore = this.imageAvailableSemaphores[this.frameInFlightIndex];
 
-            KHRSwapchain.vkAcquireNextImageKHR(VulkanManager.getLogicalDevice(), swapChain.getSwapChain(), Long.MAX_VALUE, imageAvailableSemaphore, VK14.VK_NULL_HANDLE, this.imageIndexBuffer);
+            if (KHRSwapchain.vkAcquireNextImageKHR(VulkanManager.getLogicalDevice(), swapChain.getSwapChain(), Long.MAX_VALUE, imageAvailableSemaphore, VK14.VK_NULL_HANDLE, this.imageIndexBuffer) != VK14.VK_SUCCESS) {
+                return;
+            }
+
             int imageIndex = this.imageIndexBuffer.get(0);
+            FrameResources frameResources = this.frameResources[this.frameInFlightIndex];
 
             frameResources.recordGraphicsAndTransferCommands(
                     stack,
