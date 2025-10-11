@@ -48,28 +48,28 @@ public class TextRenderer implements AutoCloseable {
     }
 
     public void renderText(BatchRenderer batch, String text, float x, float y, float charScale) {
-        float xPos = x;
-        float yPos = y;
+        float cursorX = x;
+        float cursorY = y;
         int strLength = text.length();
 
         for (int i = 0; i < strLength; ++i) {
             char c = text.charAt(i);
 
             switch (c) {
-                case ' ' -> xPos += (this.charResolution * charScale) / 2.5f;
-                case '\t' -> xPos += (this.charResolution * charScale) * 1.5f;
+                case ' ' -> cursorX += (this.charResolution * charScale) / 2.5f;
+                case '\t' -> cursorX += (this.charResolution * charScale) * 1.5f;
                 case '\n' -> {
-                    xPos = x;
-                    yPos -= this.charResolution * charScale;
+                    cursorX = x;
+                    cursorY -= this.charResolution * charScale;
                 }
                 default -> {
                     int arrayIndex = c - TextData.FIRST_CHAR;
                     GlyphData glyphData = arrayIndex >= 0 && arrayIndex < TextData.NUM_CHARS ? this.glyphDataArr[arrayIndex] : this.glyphDataArr['?' - TextData.FIRST_CHAR];
                     TextureRegion textureRegion = glyphData.textureRegion();
 
-                    batch.addSprite(textureRegion, xPos, yPos + glyphData.descent() * charScale, textureRegion.width() * charScale, textureRegion.height() * charScale);
+                    batch.addSprite(textureRegion, cursorX, cursorY + glyphData.descent() * charScale, textureRegion.width() * charScale, textureRegion.height() * charScale);
 
-                    xPos += glyphData.advance() * charScale;
+                    cursorX += glyphData.advance() * charScale;
                 }
             }
         }
