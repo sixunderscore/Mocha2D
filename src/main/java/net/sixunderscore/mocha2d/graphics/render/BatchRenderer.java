@@ -98,7 +98,7 @@ public class BatchRenderer implements AutoCloseable {
         // Rotation data
         float rotationSin = 0;
         float rotationCos = 1f;
-        if (Math.abs(rotationDegrees) > 0.0001f) {
+        if (Math.abs(rotationDegrees) > 0.001f) {
             float rotationRadians = (float) Math.toRadians(rotationDegrees);
             rotationSin = (float) Math.sin(rotationRadians);
             rotationCos = (float) Math.cos(rotationRadians);
