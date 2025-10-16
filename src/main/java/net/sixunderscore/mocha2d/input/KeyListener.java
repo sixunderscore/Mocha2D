@@ -1,5 +1,6 @@
 package net.sixunderscore.mocha2d.input;
 
+import net.sixunderscore.mocha2d.Window;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayDeque;
@@ -10,6 +11,7 @@ import java.util.Set;
 public class KeyListener {
     private final Set<Integer> pressedKeys = new HashSet<>();
     private final Queue<Character> typedChars = new ArrayDeque<>();
+    private float timeSinceLastCharTyped = 0;
 
     public KeyListener(long window) {
         GLFW.glfwSetKeyCallback(window, this::handleKeyInput);
@@ -27,6 +29,18 @@ public class KeyListener {
 
     private void handleCharTyping(long window, int codepoint) {
         this.typedChars.add((char) codepoint);
+        this.timeSinceLastCharTyped = 0;
+    }
+
+    public void timedClearCharBuffer() {
+        if (!this.typedChars.isEmpty()) {
+            this.timeSinceLastCharTyped += Window.getDeltaTime();
+
+            if (this.timeSinceLastCharTyped >= 1f) {
+                this.typedChars.clear();
+                this.timeSinceLastCharTyped = 0;
+            }
+        }
     }
 
     public boolean isKeyPressed(int keyCode) {

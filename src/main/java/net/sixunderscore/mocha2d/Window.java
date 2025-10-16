@@ -99,6 +99,7 @@ public class Window {
 
             batch.draw(camera, swapChain, texManager, viewportScissor);
 
+            keyListener.timedClearCharBuffer();
             fpsHelper.cap();
         }
     }
