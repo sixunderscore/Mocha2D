@@ -10,7 +10,6 @@ import net.sixunderscore.mocha2d.util.OrthographicCamera;
 import org.joml.Vector2f;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
-import org.lwjgl.util.vma.Vma;
 import org.lwjgl.vulkan.*;
 
 import java.nio.FloatBuffer;
@@ -20,8 +19,6 @@ public class BatchRenderer implements AutoCloseable {
     private final int framesInFlight;
     private int frameInFlightIndex;
     private final GraphicsPipeline pipeline;
-    private final GpuBuffer vertexBuffer;
-    private final GpuBuffer indexBuffer;
     private final FrameResources[] frameResources;
     private final long[] imageAvailableSemaphores;
     private final long[] renderFinishedSemaphores;
@@ -34,6 +31,10 @@ public class BatchRenderer implements AutoCloseable {
         this.framesInFlight = swapChain.getImageCount();
         this.frameInFlightIndex = 0;
         this.indexOffset = 0;
+        this.frameResources = new FrameResources[this.framesInFlight];
+        this.imageAvailableSemaphores = new long[this.framesInFlight];
+        this.renderFinishedSemaphores = new long[this.framesInFlight];
+        this.inFlightFences = new long[this.framesInFlight];
 
         try (MemoryStack stack = MemoryStack.stackPush()) {
             int maxQuads = 0xFFFF / 4; // Unsigned short max value divided by 4 vertices in a quad
@@ -42,13 +43,6 @@ public class BatchRenderer implements AutoCloseable {
 
             int indexBufferSizeBytes = maxIndices * Short.BYTES;
             int vertexBufferSizeBytes = maxVertices * VertexData.TOTAL_SIZE_BYTES;
-
-            this.indexBuffer = new GpuBuffer(stack, indexBufferSizeBytes, VK14.VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK14.VK_BUFFER_USAGE_INDEX_BUFFER_BIT, Vma.VMA_MEMORY_USAGE_GPU_ONLY);
-            this.vertexBuffer = new GpuBuffer(stack, vertexBufferSizeBytes, VK14.VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK14.VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, Vma.VMA_MEMORY_USAGE_GPU_ONLY);
-            this.frameResources = new FrameResources[this.framesInFlight];
-            this.imageAvailableSemaphores = new long[this.framesInFlight];
-            this.renderFinishedSemaphores = new long[this.framesInFlight];
-            this.inFlightFences = new long[this.framesInFlight];
 
             for (int i = 0; i < this.framesInFlight; ++i) {
                 this.frameResources[i] = new FrameResources(stack, indexBufferSizeBytes, vertexBufferSizeBytes);
@@ -75,7 +69,7 @@ public class BatchRenderer implements AutoCloseable {
     public void addSprite(TextureRegion texture, float x, float y, float width, float height, float rotationDegrees, float pivotX, float pivotY) {
         FrameResources frameResources = this.frameResources[this.frameInFlightIndex];
 
-        frameResources.getMappedStagingIndexBuffer()
+        frameResources.getMappedIndexBuffer()
                 .put((short) this.indexOffset)        // Top-left
                 .put((short) (this.indexOffset + 1))  // Top-right
                 .put((short) (this.indexOffset + 2))  // Bottom-left
@@ -86,7 +80,7 @@ public class BatchRenderer implements AutoCloseable {
 
         this.indexOffset += 4;
 
-        FloatBuffer stagingVertexBuffer = frameResources.getMappedStagingVertexBuffer();
+        FloatBuffer stagingVertexBuffer = frameResources.getMappedVertexBuffer();
 
         // UV data
         UVs uvCoordinates = texture.uvCoordinates();
@@ -147,18 +141,7 @@ public class BatchRenderer implements AutoCloseable {
             int imageIndex = this.imageIndexBuffer.get(0);
             FrameResources frameResources = this.frameResources[this.frameInFlightIndex];
 
-            frameResources.recordGraphicsAndTransferCommands(
-                    stack,
-                    this.indexBuffer,
-                    this.vertexBuffer,
-                    swapChain,
-                    textureManager,
-                    viewportScissor,
-                    this.pipeline,
-                    imageIndex,
-                    this.clearColor,
-                    camera
-            );
+            frameResources.recordGraphicsCommands(stack, swapChain, textureManager, viewportScissor, this.pipeline, imageIndex, this.clearColor, camera);
 
             long renderFinishedSemaphore = this.renderFinishedSemaphores[imageIndex];
             frameResources.submitCommandBuffer(stack, imageAvailableSemaphore, renderFinishedSemaphore, inFlightFence);
@@ -187,9 +170,6 @@ public class BatchRenderer implements AutoCloseable {
 
         VK14.vkWaitForFences(logicalDevice, this.inFlightFences, true, Long.MAX_VALUE);
         VK14.vkQueueWaitIdle(VulkanManager.getGraphicsQueue());
-
-        this.vertexBuffer.close();
-        this.indexBuffer.close();
 
         for (int i = 0; i < this.framesInFlight; ++i) {
             this.frameResources[i].close();

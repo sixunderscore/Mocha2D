@@ -15,45 +15,27 @@ import java.nio.ShortBuffer;
 public class FrameResources implements AutoCloseable {
     private final CommandPool commandPool;
     private final VkCommandBuffer commandBuffer;
-    private final GpuBuffer stagingIndexBuffer;
-    private final ShortBuffer mappedStagingIndexBuffer;
-    private final GpuBuffer stagingVertexBuffer;
-    private final FloatBuffer mappedStagingVertexBuffer;
+    private final GpuBuffer indexBuffer;
+    private final ShortBuffer mappedIndexBuffer;
+    private final GpuBuffer vertexBuffer;
+    private final FloatBuffer mappedVertexBuffer;
 
     public FrameResources(MemoryStack stack, int indexBufferSizeBytes, int vertexBufferSizeBytes) {
         this.commandPool = new CommandPool(stack, VulkanManager.getGraphicsQueueIndex(), VK14.VK_COMMAND_POOL_CREATE_TRANSIENT_BIT);
         this.commandBuffer = this.commandPool.allocateCommandBuffer(stack);
 
-        this.stagingIndexBuffer = new GpuBuffer(stack, indexBufferSizeBytes, VK14.VK_BUFFER_USAGE_TRANSFER_SRC_BIT, Vma.VMA_MEMORY_USAGE_CPU_TO_GPU);
-        this.mappedStagingIndexBuffer = this.stagingIndexBuffer.map(stack).asShortBuffer();
-        this.stagingVertexBuffer = new GpuBuffer(stack, vertexBufferSizeBytes, VK14.VK_BUFFER_USAGE_TRANSFER_SRC_BIT, Vma.VMA_MEMORY_USAGE_CPU_TO_GPU);
-        this.mappedStagingVertexBuffer = this.stagingVertexBuffer.map(stack).asFloatBuffer();
+        this.indexBuffer = new GpuBuffer(stack, indexBufferSizeBytes, VK14.VK_BUFFER_USAGE_INDEX_BUFFER_BIT, Vma.VMA_MEMORY_USAGE_CPU_TO_GPU);
+        this.mappedIndexBuffer = this.indexBuffer.map(stack).asShortBuffer();
+        this.vertexBuffer = new GpuBuffer(stack, vertexBufferSizeBytes, VK14.VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, Vma.VMA_MEMORY_USAGE_CPU_TO_GPU);
+        this.mappedVertexBuffer = this.vertexBuffer.map(stack).asFloatBuffer();
     }
 
-    public void recordGraphicsAndTransferCommands(MemoryStack stack, GpuBuffer indexBuffer, GpuBuffer vertexBuffer, SwapChain swapChain, TextureManager textureManager, ViewportScissor viewportScissor, GraphicsPipeline pipeline, int imageIndex, VkClearColorValue clearColorValue, OrthographicCamera camera) {
+    public void recordGraphicsCommands(MemoryStack stack, SwapChain swapChain, TextureManager textureManager, ViewportScissor viewportScissor, GraphicsPipeline pipeline, int imageIndex, VkClearColorValue clearColorValue, OrthographicCamera camera) {
         VK14.vkResetCommandPool(VulkanManager.getLogicalDevice(), this.commandPool.getPool(), 0);
         VkCommandBufferBeginInfo commandBufferBeginInfo = VkCommandBufferBeginInfo.calloc(stack)
                 .sType$Default()
                 .flags(VK14.VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
         VK14.vkBeginCommandBuffer(this.commandBuffer, commandBufferBeginInfo);
-
-        // ---- Transfer commands ----
-
-        VkBufferCopy.Buffer bufferCopy = VkBufferCopy.malloc(1, stack);
-
-        int indexBufferSizeBytes = this.mappedStagingIndexBuffer.position() * Short.BYTES;
-        if (indexBufferSizeBytes > 0) {
-            bufferCopy.get(0).set(0, 0, indexBufferSizeBytes);
-            VK14.vkCmdCopyBuffer(this.commandBuffer, this.stagingIndexBuffer.getBuffer(), indexBuffer.getBuffer(), bufferCopy);
-        }
-
-        int vertexBufferSizeBytes = this.mappedStagingVertexBuffer.position() * Float.BYTES;
-        if (vertexBufferSizeBytes > 0) {
-            bufferCopy.get(0).set(0, 0, vertexBufferSizeBytes);
-            VK14.vkCmdCopyBuffer(this.commandBuffer, this.stagingVertexBuffer.getBuffer(), vertexBuffer.getBuffer(), bufferCopy);
-        }
-
-        // ---- Graphics commands ----
 
         // Acquire barrier
         VkImageMemoryBarrier2.Buffer imageBarrier = VkImageMemoryBarrier2.calloc(1, stack);
@@ -96,10 +78,10 @@ public class FrameResources implements AutoCloseable {
         VK14.vkCmdBindDescriptorSets(this.commandBuffer, VK14.VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.getLayout(), 0, stack.mallocLong(1).put(0, textureManager.getDescriptorSet()), null);
         VK14.vkCmdSetViewport(this.commandBuffer, 0, viewportScissor.getViewport());
         VK14.vkCmdSetScissor(this.commandBuffer, 0, viewportScissor.getScissor());
-        VK14.vkCmdBindVertexBuffers(this.commandBuffer, 0, stack.mallocLong(1).put(0, vertexBuffer.getBuffer()), stack.mallocLong(1).put(0, 0));
-        VK14.vkCmdBindIndexBuffer(this.commandBuffer, indexBuffer.getBuffer(), 0, VK14.VK_INDEX_TYPE_UINT16);
+        VK14.vkCmdBindVertexBuffers(this.commandBuffer, 0, stack.mallocLong(1).put(0, this.vertexBuffer.getBuffer()), stack.mallocLong(1).put(0, 0));
+        VK14.vkCmdBindIndexBuffer(this.commandBuffer, this.indexBuffer.getBuffer(), 0, VK14.VK_INDEX_TYPE_UINT16);
 
-        int indexCount = this.mappedStagingIndexBuffer.position();
+        int indexCount = this.mappedIndexBuffer.position();
         VK14.vkCmdDrawIndexed(this.commandBuffer, indexCount, 1, 0, 0, 0);
 
         VK14.vkCmdEndRendering(this.commandBuffer);
@@ -157,22 +139,22 @@ public class FrameResources implements AutoCloseable {
     }
 
     public void resetMappedBuffers() {
-        this.mappedStagingVertexBuffer.clear();
-        this.mappedStagingIndexBuffer.clear();
+        this.mappedVertexBuffer.clear();
+        this.mappedIndexBuffer.clear();
     }
 
-    public ShortBuffer getMappedStagingIndexBuffer() {
-        return this.mappedStagingIndexBuffer;
+    public ShortBuffer getMappedIndexBuffer() {
+        return this.mappedIndexBuffer;
     }
 
-    public FloatBuffer getMappedStagingVertexBuffer() {
-        return this.mappedStagingVertexBuffer;
+    public FloatBuffer getMappedVertexBuffer() {
+        return this.mappedVertexBuffer;
     }
 
     @Override
     public void close() {
         this.commandPool.close();
-        this.stagingIndexBuffer.close();
-        this.stagingVertexBuffer.close();
+        this.indexBuffer.close();
+        this.vertexBuffer.close();
     }
 }
