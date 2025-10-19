@@ -39,7 +39,7 @@ dependencies {
 
 tasks.register('copyLibs', Copy) {
     from configurations.runtimeClasspath.filter {
-        !it.name.contains("annotations")
+        !it.name.contains("annotations") && !it.name.contains("kotlin")
     }
     into layout.buildDirectory.dir("libs/libraries")
 }

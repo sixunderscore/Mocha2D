@@ -14,6 +14,7 @@ import org.lwjgl.vulkan.*;
 
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
+import java.nio.ShortBuffer;
 
 public class BatchRenderer implements AutoCloseable {
     private final int framesInFlight;
@@ -68,8 +69,12 @@ public class BatchRenderer implements AutoCloseable {
 
     public void addSprite(TextureRegion texture, float x, float y, float width, float height, float rotationDegrees, float pivotX, float pivotY) {
         FrameResources frameResources = this.frameResources[this.frameInFlightIndex];
+        ShortBuffer mappedIndexBuffer = frameResources.getMappedIndexBuffer();
+        FloatBuffer mappedVertexBuffer = frameResources.getMappedVertexBuffer();
 
-        frameResources.getMappedIndexBuffer()
+        // ---- Writing index data for quad ----
+
+        mappedIndexBuffer
                 .put((short) this.indexOffset)        // Top-left
                 .put((short) (this.indexOffset + 1))  // Top-right
                 .put((short) (this.indexOffset + 2))  // Bottom-left
@@ -80,7 +85,7 @@ public class BatchRenderer implements AutoCloseable {
 
         this.indexOffset += 4;
 
-        FloatBuffer stagingVertexBuffer = frameResources.getMappedVertexBuffer();
+        // ---- Writing vertex data for quad ----
 
         // UV data
         UVs uvCoordinates = texture.uvCoordinates();
@@ -88,6 +93,8 @@ public class BatchRenderer implements AutoCloseable {
         Vector2f topRight = uvCoordinates.topRight();
         Vector2f bottomLeft = uvCoordinates.bottomLeft();
         Vector2f bottomRight = uvCoordinates.bottomRight();
+
+        int index = texture.imageIndex();
 
         // Rotation data
         float rotationSin = 0;
@@ -98,31 +105,31 @@ public class BatchRenderer implements AutoCloseable {
             rotationCos = (float) Math.cos(rotationRadians);
         }
 
-        stagingVertexBuffer
+        mappedVertexBuffer
                 .put(x).put(y)
                 .put(topLeft.x).put(topLeft.y)
-                .put(texture.imageIndex())
+                .put(index)
                 .put(rotationSin).put(rotationCos)
                 .put(pivotX).put(pivotY);
 
-        stagingVertexBuffer
+        mappedVertexBuffer
                 .put(x + width).put(y)
                 .put(topRight.x).put(topRight.y)
-                .put(texture.imageIndex())
+                .put(index)
                 .put(rotationSin).put(rotationCos)
                 .put(pivotX).put(pivotY);
 
-        stagingVertexBuffer
+        mappedVertexBuffer
                 .put(x).put(y + height)
                 .put(bottomLeft.x).put(bottomLeft.y)
-                .put(texture.imageIndex())
+                .put(index)
                 .put(rotationSin).put(rotationCos)
                 .put(pivotX).put(pivotY);
 
-        stagingVertexBuffer
+        mappedVertexBuffer
                 .put(x + width).put(y + height)
                 .put(bottomRight.x).put(bottomRight.y)
-                .put(texture.imageIndex())
+                .put(index)
                 .put(rotationSin).put(rotationCos)
                 .put(pivotX).put(pivotY);
     }

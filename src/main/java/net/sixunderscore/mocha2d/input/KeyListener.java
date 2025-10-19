@@ -7,6 +7,7 @@ import java.util.ArrayDeque;
 import java.util.HashSet;
 import java.util.Queue;
 import java.util.Set;
+import java.util.function.Consumer;
 
 public class KeyListener {
     private final Set<Integer> pressedKeys = new HashSet<>();
@@ -55,8 +56,10 @@ public class KeyListener {
         return !this.pressedKeys.isEmpty();
     }
 
-    public char consumeNextTypedChar() {
-        return !this.typedChars.isEmpty() ? this.typedChars.poll() : '\0';
+    public void consumeAllTypedChars(Consumer<Character> consumer) {
+        while (!this.typedChars.isEmpty()) {
+            consumer.accept(this.typedChars.poll());
+        }
     }
 
     public boolean hasTypedChars() {

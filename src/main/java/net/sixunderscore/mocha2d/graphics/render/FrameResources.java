@@ -138,17 +138,17 @@ public class FrameResources implements AutoCloseable {
         KHRSwapchain.vkQueuePresentKHR(VulkanManager.getGraphicsQueue(), presentInfo);
     }
 
-    public void resetMappedBuffers() {
-        this.mappedVertexBuffer.clear();
-        this.mappedIndexBuffer.clear();
-    }
-
     public ShortBuffer getMappedIndexBuffer() {
         return this.mappedIndexBuffer;
     }
 
     public FloatBuffer getMappedVertexBuffer() {
         return this.mappedVertexBuffer;
+    }
+
+    public void resetMappedBuffers() {
+        this.mappedVertexBuffer.clear();
+        this.mappedIndexBuffer.clear();
     }
 
     @Override
