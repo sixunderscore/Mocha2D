@@ -1,4 +1,4 @@
-package net.sixunderscore.mocha2d.graphics.text;
+package net.sixunderscore.mocha2d.graphics.resources.text;
 
 public class TextData {
     public static final int FIRST_CHAR = 33;

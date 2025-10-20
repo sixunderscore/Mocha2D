@@ -1,8 +1,13 @@
 package net.sixunderscore.mocha2d.util;
 
 public class DeltaTime {
-    private long lastTime = System.nanoTime();
-    private float deltaTime = 0;
+    private long lastTime;
+    private float deltaTime;
+
+    public DeltaTime() {
+        this.lastTime = System.nanoTime();
+        this.deltaTime = 0;
+    }
 
     public void update() {
         long currentTime = System.nanoTime();

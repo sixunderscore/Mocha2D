@@ -1,4 +1,4 @@
-package net.sixunderscore.mocha2d.graphics.text;
+package net.sixunderscore.mocha2d.graphics.resources.text;
 
 public enum FontBitmapResolution {
     NORMAL(64, 580),

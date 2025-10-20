@@ -111,25 +111,12 @@ public class SwapChain implements AutoCloseable {
     private long[] createImageViews(MemoryStack stack) {
         long[] imageViews = new long[this.imageCount];
 
-        VkComponentMapping componentMapping = VkComponentMapping.calloc(stack)
-                .r(VK14.VK_COMPONENT_SWIZZLE_IDENTITY)
-                .g(VK14.VK_COMPONENT_SWIZZLE_IDENTITY)
-                .b(VK14.VK_COMPONENT_SWIZZLE_IDENTITY)
-                .a(VK14.VK_COMPONENT_SWIZZLE_IDENTITY);
-
-        VkImageSubresourceRange subresourceRange = VkImageSubresourceRange.calloc(stack)
-                .aspectMask(VK14.VK_IMAGE_ASPECT_COLOR_BIT)
-                .baseMipLevel(0)
-                .levelCount(1)
-                .baseArrayLayer(0)
-                .layerCount(1);
-
         VkImageViewCreateInfo imageViewCreateInfo = VkImageViewCreateInfo.calloc(stack)
                 .sType$Default()
                 .viewType(VK14.VK_IMAGE_VIEW_TYPE_2D)
                 .format(this.imageFormat)
-                .components(componentMapping)
-                .subresourceRange(subresourceRange);
+                .components(c -> c.set(VK14.VK_COMPONENT_SWIZZLE_IDENTITY, VK14.VK_COMPONENT_SWIZZLE_IDENTITY, VK14.VK_COMPONENT_SWIZZLE_IDENTITY, VK14.VK_COMPONENT_SWIZZLE_IDENTITY))
+                .subresourceRange(s -> s.set(VK14.VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1));
 
         LongBuffer imageViewBuff = stack.mallocLong(1);
 

@@ -1,6 +1,6 @@
 package net.sixunderscore.mocha2d.util;
 
-import net.sixunderscore.mocha2d.graphics.textures.TextureData;
+import net.sixunderscore.mocha2d.graphics.resources.textures.TextureData;
 import net.sixunderscore.mocha2d.vulkan.util.GpuBuffer;
 import org.lwjgl.stb.STBImage;
 import org.lwjgl.system.MemoryStack;

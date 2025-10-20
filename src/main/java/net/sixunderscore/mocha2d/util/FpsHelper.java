@@ -8,8 +8,8 @@ public class FpsHelper {
     private final long frameCapDurationNanos;
     private long nextFrameTimeNanos;
     // Fps Counter
-    private int fpsCount = 0;
-    private float fpsCountUpdateTimer = 0;
+    private int fpsCount;
+    private float fpsCountUpdateTimer;
 
     public FpsHelper(int fpsCap) {
         if (fpsCap > 0) {
@@ -20,6 +20,9 @@ public class FpsHelper {
             this.frameCapDurationNanos = 0;
             this.shouldCap = false;
         }
+
+        this.fpsCount = 0;
+        this.fpsCountUpdateTimer = 0;
     }
 
     public void cap() {

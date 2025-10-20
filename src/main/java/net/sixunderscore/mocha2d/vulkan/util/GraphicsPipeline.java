@@ -1,7 +1,7 @@
 package net.sixunderscore.mocha2d.vulkan.util;
 
 import net.sixunderscore.mocha2d.graphics.render.VertexData;
-import net.sixunderscore.mocha2d.graphics.textures.TextureManager;
+import net.sixunderscore.mocha2d.graphics.resources.ResourceManager;
 import net.sixunderscore.mocha2d.vulkan.VulkanManager;
 import net.sixunderscore.mocha2d.util.ResourceUtils;
 import org.lwjgl.system.MemoryStack;
@@ -14,19 +14,19 @@ public class GraphicsPipeline implements AutoCloseable {
     private final long pipelineLayout;
     private final long pipeline;
 
-    public GraphicsPipeline(MemoryStack stack, TextureManager textureManager, SwapChain swapChain, String vertexShaderPath, String fragmentShaderPath) {
-        this.pipelineLayout = this.createPipelineLayout(stack, textureManager);
-        this.pipeline = this.createPipeline(stack, textureManager, swapChain, vertexShaderPath, fragmentShaderPath);
+    public GraphicsPipeline(MemoryStack stack, ResourceManager resourceManager, SwapChain swapChain, String vertexShaderPath, String fragmentShaderPath) {
+        this.pipelineLayout = this.createPipelineLayout(stack, resourceManager);
+        this.pipeline = this.createPipeline(stack, resourceManager, swapChain, vertexShaderPath, fragmentShaderPath);
     }
 
-    private long createPipelineLayout(MemoryStack stack, TextureManager textureManager) {
+    private long createPipelineLayout(MemoryStack stack, ResourceManager resourceManager) {
         // Pass combined view + projection matrix as push constant
         VkPushConstantRange.Buffer pushConstantRanges = VkPushConstantRange.calloc(1, stack);
         pushConstantRanges.get(0).set(VK14.VK_SHADER_STAGE_VERTEX_BIT, 0, 16 * Float.BYTES);
 
         VkPipelineLayoutCreateInfo layoutCreateInfo = VkPipelineLayoutCreateInfo.calloc(stack)
                 .sType$Default()
-                .pSetLayouts(stack.longs(textureManager.getDescriptorSetLayout()))
+                .pSetLayouts(stack.longs(resourceManager.getDescriptorSetLayout()))
                 .pPushConstantRanges(pushConstantRanges);
 
         LongBuffer pipeLineLayoutBuff = stack.mallocLong(1);
@@ -37,7 +37,7 @@ public class GraphicsPipeline implements AutoCloseable {
         return pipeLineLayoutBuff.get(0);
     }
 
-    private long createPipeline(MemoryStack stack, TextureManager textureManager, SwapChain swapChain, String vertexShaderPath, String fragmentShaderPath) {
+    private long createPipeline(MemoryStack stack, ResourceManager resourceManager, SwapChain swapChain, String vertexShaderPath, String fragmentShaderPath) {
         long vertexShader = createShaderModule(stack, ResourceUtils.loadRawFile(vertexShaderPath));
         long fragmentShader = createShaderModule(stack, ResourceUtils.loadRawFile(fragmentShaderPath));
 
@@ -50,7 +50,7 @@ public class GraphicsPipeline implements AutoCloseable {
 
         VkSpecializationMapEntry.Buffer specializationMapEntry = VkSpecializationMapEntry.calloc(1, stack);
         specializationMapEntry.get(0).set(0, 0, Integer.BYTES);
-        VkSpecializationInfo specializationInfo = VkSpecializationInfo.calloc(stack).set(specializationMapEntry, stack.malloc(Integer.BYTES).putInt(0, textureManager.getDescriptorCount()));
+        VkSpecializationInfo specializationInfo = VkSpecializationInfo.calloc(stack).set(specializationMapEntry, stack.malloc(Integer.BYTES).putInt(0, resourceManager.getDescriptorCount()));
 
         shaderStageCreateInfos.get(1)
                 .sType$Default()

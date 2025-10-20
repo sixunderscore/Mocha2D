@@ -4,13 +4,19 @@ import org.joml.Vector2d;
 import org.lwjgl.glfw.GLFW;
 
 public class MouseListener {
-    private final Vector2d mousePos = new Vector2d();
+    private final Vector2d mousePos;
     private double scrollXOffset;
     private double scrollYOffset;
-    private boolean leftButtonPressed = false;
-    private boolean rightButtonPressed = false;
+    private boolean leftButtonPressed;
+    private boolean rightButtonPressed;
 
     public MouseListener(long window) {
+        this.mousePos = new Vector2d();
+        this.scrollXOffset = 0;
+        this.scrollYOffset = 0;
+        this.leftButtonPressed = false;
+        this.rightButtonPressed = false;
+
         GLFW.glfwSetMouseButtonCallback(window, this::handleMouseButtons);
         GLFW.glfwSetCursorPosCallback(window, this::handleCursorMovement);
         GLFW.glfwSetScrollCallback(window, this::handleScrollWheel);

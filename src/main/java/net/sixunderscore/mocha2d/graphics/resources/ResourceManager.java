@@ -1,15 +1,16 @@
-package net.sixunderscore.mocha2d.graphics.textures;
+package net.sixunderscore.mocha2d.graphics.resources;
 
-import net.sixunderscore.mocha2d.graphics.text.FontBitmapResolution;
-import net.sixunderscore.mocha2d.util.TextureFile;
+import net.sixunderscore.mocha2d.graphics.resources.text.FontBitmapResolution;
+import net.sixunderscore.mocha2d.graphics.resources.textures.TextureAtlas;
+import net.sixunderscore.mocha2d.graphics.resources.textures.TextureData;
+import net.sixunderscore.mocha2d.graphics.resources.textures.TextureRegion;
 import net.sixunderscore.mocha2d.vulkan.util.CommandPool;
 import net.sixunderscore.mocha2d.vulkan.util.SyncUtils;
-import net.sixunderscore.mocha2d.graphics.text.TextData;
-import net.sixunderscore.mocha2d.graphics.text.TextRenderer;
+import net.sixunderscore.mocha2d.graphics.resources.text.TextData;
+import net.sixunderscore.mocha2d.graphics.resources.text.TextRenderer;
 import net.sixunderscore.mocha2d.vulkan.util.GpuBuffer;
 import net.sixunderscore.mocha2d.vulkan.VulkanManager;
 import net.sixunderscore.mocha2d.util.ResourceUtils;
-import net.sixunderscore.mocha2d.util.TtfFile;
 import org.lwjgl.stb.STBTTBakedChar;
 import org.lwjgl.stb.STBTTFontinfo;
 import org.lwjgl.stb.STBTruetype;
@@ -24,7 +25,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class TextureManager implements AutoCloseable {
+public class ResourceManager implements AutoCloseable {
     private final Map<String, TextureAtlas> atlasMap;
     private final Map<String, TextRenderer> textRendererMap;
     private final long descriptorPool;
@@ -34,7 +35,7 @@ public class TextureManager implements AutoCloseable {
     private final long nearestSampler;
     private final int totalTextures;
 
-    public TextureManager(TextureFile[] textureFiles, TtfFile[] ttfFiles) {
+    public ResourceManager(TextureFile[] textureFiles, TtfFile[] ttfFiles) {
         if (textureFiles.length == 0 && ttfFiles.length == 0) {
             throw new IllegalStateException("At least one Texture or TTF file must be loaded");
         }
@@ -142,8 +143,9 @@ public class TextureManager implements AutoCloseable {
             }
 
             for (TtfFile file : ttfFiles) {
-                TextRenderer textRenderer = this.createTextRenderer(stack, commandBuffer, file, textureIndex++, stagingBuffersToFree);
-                this.textRendererMap.put(file.resourceKey(), textRenderer);
+                Map.Entry<TextRenderer, TextureAtlas> textRendererAndAtlas = this.createTextRenderer(stack, commandBuffer, file, textureIndex++, stagingBuffersToFree);
+                this.textRendererMap.put(file.resourceKey(), textRendererAndAtlas.getKey());
+                this.atlasMap.put(file.resourceKey() + "_atlas", textRendererAndAtlas.getValue());
             }
 
             VK14.vkEndCommandBuffer(commandBuffer);
@@ -175,12 +177,6 @@ public class TextureManager implements AutoCloseable {
                     .set(atlas.isPixelated() ? this.nearestSampler : this.linearSampler, atlas.getImageView(), VK14.VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
         }
 
-        for (TextRenderer textRenderer : this.textRendererMap.values()) {
-            TextureAtlas atlas = textRenderer.getFontAtlas();
-            descriptorImagesInfo.get(atlas.getImageIndex())
-                    .set(atlas.isPixelated() ? this.nearestSampler : this.linearSampler, atlas.getImageView(), VK14.VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-        }
-
         VkWriteDescriptorSet.Buffer writeDescriptorSet = VkWriteDescriptorSet.calloc(1);
         writeDescriptorSet.get(0)
                 .sType$Default()
@@ -208,7 +204,7 @@ public class TextureManager implements AutoCloseable {
         }
     }
 
-    private TextRenderer createTextRenderer(MemoryStack stack, VkCommandBuffer commandBuffer, TtfFile file, int textureIndex, List<GpuBuffer> stagingBuffersToFree) {
+    private Map.Entry<TextRenderer, TextureAtlas> createTextRenderer(MemoryStack stack, VkCommandBuffer commandBuffer, TtfFile file, int textureIndex, List<GpuBuffer> stagingBuffersToFree) {
         STBTTFontinfo fontInfo = STBTTFontinfo.malloc(stack);
         ByteBuffer ttfFileData = ResourceUtils.loadRawFile(file.path());
 
@@ -241,7 +237,7 @@ public class TextureManager implements AutoCloseable {
             MemoryUtil.memFree(ttfFileData);
             stagingBuffersToFree.add(stagingImageBuffer);
 
-            return textRenderer;
+            return Map.entry(textRenderer, fontAtlas);
         }
     }
 
@@ -272,7 +268,6 @@ public class TextureManager implements AutoCloseable {
     @Override
     public void close() {
         this.atlasMap.values().forEach(TextureAtlas::close);
-        this.textRendererMap.values().forEach(TextRenderer::close);
         VK14.vkDestroyDescriptorPool(VulkanManager.getLogicalDevice(), this.descriptorPool, null);
         VK14.vkDestroyDescriptorSetLayout(VulkanManager.getLogicalDevice(), this.descriptorSetLayout, null);
         VK14.vkDestroySampler(VulkanManager.getLogicalDevice(), this.linearSampler, null);

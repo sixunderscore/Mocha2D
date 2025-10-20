@@ -1,16 +1,32 @@
 package net.sixunderscore.mocha2d.util;
 
+import net.sixunderscore.mocha2d.graphics.resources.TextureFile;
+import net.sixunderscore.mocha2d.graphics.resources.TtfFile;
+
 public class WindowSettings {
-    private TextureFile[] textureFiles = new TextureFile[0];
-    private TtfFile[] ttfFiles = new TtfFile[0];
-    private String windowName = "Mocha2D Window";
-    private String windowIconPath = "";
-    private int initialWidth = 800;
-    private int initialHeight = 500;
-    private boolean resizeable = true;
-    private boolean vSyncEnabled = false;
-    private int fpsCap = 1000;
-    private Color clearColor = new Color((byte) 0, (byte) 0, (byte) 0);
+    private TextureFile[] textureFiles;
+    private TtfFile[] ttfFiles;
+    private String windowName;
+    private String windowIconPath;
+    private int initialWidth;
+    private int initialHeight;
+    private boolean resizeable;
+    private boolean vSyncEnabled;
+    private int fpsCap;
+    private Color clearColor;
+
+    public WindowSettings() {
+        this.textureFiles = new TextureFile[0];
+        this.ttfFiles = new TtfFile[0];
+        this.windowName = "Mocha2D Window";
+        this.windowIconPath = "";
+        this.initialWidth = 800;
+        this.initialHeight = 500;
+        this.resizeable = true;
+        this.vSyncEnabled = false;
+        this.fpsCap = 1000;
+        this.clearColor = new Color((byte) 0, (byte) 0, (byte) 0);
+    }
 
     public void setTextureFiles(TextureFile... textureFiles) {
         this.textureFiles = textureFiles;

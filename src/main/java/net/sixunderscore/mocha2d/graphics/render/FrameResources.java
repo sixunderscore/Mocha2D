@@ -1,6 +1,6 @@
 package net.sixunderscore.mocha2d.graphics.render;
 
-import net.sixunderscore.mocha2d.graphics.textures.TextureManager;
+import net.sixunderscore.mocha2d.graphics.resources.ResourceManager;
 import net.sixunderscore.mocha2d.util.OrthographicCamera;
 import net.sixunderscore.mocha2d.vulkan.VulkanManager;
 import net.sixunderscore.mocha2d.vulkan.util.*;
@@ -30,7 +30,7 @@ public class FrameResources implements AutoCloseable {
         this.mappedVertexBuffer = this.vertexBuffer.map(stack).asFloatBuffer();
     }
 
-    public void recordGraphicsCommands(MemoryStack stack, SwapChain swapChain, TextureManager textureManager, ViewportScissor viewportScissor, GraphicsPipeline pipeline, int imageIndex, VkClearColorValue clearColorValue, OrthographicCamera camera) {
+    public void recordGraphicsCommands(MemoryStack stack, SwapChain swapChain, ResourceManager resourceManager, ViewportScissor viewportScissor, GraphicsPipeline pipeline, int imageIndex, VkClearColorValue clearColorValue, OrthographicCamera camera) {
         VK14.vkResetCommandPool(VulkanManager.getLogicalDevice(), this.commandPool.getPool(), 0);
         VkCommandBufferBeginInfo commandBufferBeginInfo = VkCommandBufferBeginInfo.calloc(stack)
                 .sType$Default()
@@ -75,7 +75,7 @@ public class FrameResources implements AutoCloseable {
         VK14.vkCmdBeginRendering(this.commandBuffer, renderingInfo);
 
         VK14.vkCmdBindPipeline(this.commandBuffer, VK14.VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.getPipeline());
-        VK14.vkCmdBindDescriptorSets(this.commandBuffer, VK14.VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.getLayout(), 0, stack.mallocLong(1).put(0, textureManager.getDescriptorSet()), null);
+        VK14.vkCmdBindDescriptorSets(this.commandBuffer, VK14.VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.getLayout(), 0, stack.mallocLong(1).put(0, resourceManager.getDescriptorSet()), null);
         VK14.vkCmdSetViewport(this.commandBuffer, 0, viewportScissor.getViewport());
         VK14.vkCmdSetScissor(this.commandBuffer, 0, viewportScissor.getScissor());
         VK14.vkCmdBindVertexBuffers(this.commandBuffer, 0, stack.mallocLong(1).put(0, this.vertexBuffer.getBuffer()), stack.mallocLong(1).put(0, 0));

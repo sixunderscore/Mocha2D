@@ -1,8 +1,8 @@
-package net.sixunderscore.mocha2d.graphics.text;
+package net.sixunderscore.mocha2d.graphics.resources.text;
 
 import net.sixunderscore.mocha2d.graphics.render.BatchRenderer;
-import net.sixunderscore.mocha2d.graphics.textures.TextureAtlas;
-import net.sixunderscore.mocha2d.graphics.textures.TextureRegion;
+import net.sixunderscore.mocha2d.graphics.resources.textures.TextureAtlas;
+import net.sixunderscore.mocha2d.graphics.resources.textures.TextureRegion;
 import org.lwjgl.stb.STBTTBakedChar;
 import org.lwjgl.stb.STBTTFontinfo;
 import org.lwjgl.stb.STBTruetype;
@@ -10,26 +10,24 @@ import org.lwjgl.system.MemoryStack;
 
 import java.nio.IntBuffer;
 
-public class TextRenderer implements AutoCloseable {
-    private final TextureAtlas fontAtlas;
+public class TextRenderer {
     private final GlyphData[] glyphDataArr;
     private final int charResolution;
 
-    public TextRenderer(TextureAtlas textureAtlas, int charResolution, STBTTBakedChar.Buffer charsData, STBTTFontinfo fontInfo) {
-        this.fontAtlas = textureAtlas;
+    public TextRenderer(TextureAtlas fontAtlas, int charResolution, STBTTBakedChar.Buffer charsData, STBTTFontinfo fontInfo) {
         this.glyphDataArr = new GlyphData[TextData.NUM_CHARS];
         this.charResolution = charResolution;
-        this.loadTextureRegionsAndGlyphData(charsData, fontInfo, charResolution);
+        this.loadTextureRegionsAndGlyphData(fontAtlas, charsData, fontInfo, charResolution);
     }
 
-    private void loadTextureRegionsAndGlyphData(STBTTBakedChar.Buffer charsData, STBTTFontinfo fontInfo, int charResolution) {
+    private void loadTextureRegionsAndGlyphData(TextureAtlas fontAtlas, STBTTBakedChar.Buffer charsData, STBTTFontinfo fontInfo, int charResolution) {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             float fontScale = STBTruetype.stbtt_ScaleForPixelHeight(fontInfo, charResolution);
 
             for (char c = TextData.FIRST_CHAR; c <= TextData.LAST_CHAR; ++c) {
                 int index = c - TextData.FIRST_CHAR;
                 STBTTBakedChar charData = charsData.get(index);
-                TextureRegion charTextureRegion = this.fontAtlas.getRegion(charData.x0(), charData.x1(), charData.y0(), charData.y1());
+                TextureRegion charTextureRegion = fontAtlas.getRegion(charData.x0(), charData.x1(), charData.y0(), charData.y1());
 
                 this.glyphDataArr[index] = new GlyphData(charTextureRegion, this.getCharDescent(stack, fontInfo, c, fontScale), charData.xadvance());
             }
@@ -73,14 +71,5 @@ public class TextRenderer implements AutoCloseable {
                 }
             }
         }
-    }
-
-    public TextureAtlas getFontAtlas() {
-        return this.fontAtlas;
-    }
-
-    @Override
-    public void close() {
-        this.fontAtlas.close();
     }
 }

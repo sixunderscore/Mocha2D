@@ -1,8 +1,8 @@
 package net.sixunderscore.mocha2d.graphics.render;
 
-import net.sixunderscore.mocha2d.graphics.textures.TextureManager;
-import net.sixunderscore.mocha2d.graphics.textures.TextureRegion;
-import net.sixunderscore.mocha2d.graphics.textures.UVs;
+import net.sixunderscore.mocha2d.graphics.resources.ResourceManager;
+import net.sixunderscore.mocha2d.graphics.resources.textures.TextureRegion;
+import net.sixunderscore.mocha2d.graphics.resources.textures.UVs;
 import net.sixunderscore.mocha2d.util.Color;
 import net.sixunderscore.mocha2d.vulkan.util.*;
 import net.sixunderscore.mocha2d.vulkan.VulkanManager;
@@ -28,7 +28,7 @@ public class BatchRenderer implements AutoCloseable {
     private final IntBuffer imageIndexBuffer;
     private final VkClearColorValue clearColor;
 
-    public BatchRenderer(TextureManager textureManager, SwapChain swapChain, Color clearColor) {
+    public BatchRenderer(ResourceManager resourceManager, SwapChain swapChain, Color clearColor) {
         this.framesInFlight = swapChain.getImageCount();
         this.frameInFlightIndex = 0;
         this.indexOffset = 0;
@@ -52,7 +52,7 @@ public class BatchRenderer implements AutoCloseable {
                 this.inFlightFences[i] = SyncUtils.createFence(stack, true);
             }
 
-            this.pipeline = new GraphicsPipeline(stack, textureManager, swapChain, "assets/shaders/vertex.spv", "assets/shaders/fragment.spv");
+            this.pipeline = new GraphicsPipeline(stack, resourceManager, swapChain, "assets/shaders/vertex.spv", "assets/shaders/fragment.spv");
         }
 
         this.imageIndexBuffer = MemoryUtil.memAllocInt(1);
@@ -134,7 +134,7 @@ public class BatchRenderer implements AutoCloseable {
                 .put(pivotX).put(pivotY);
     }
 
-    public void draw(OrthographicCamera camera, SwapChain swapChain, TextureManager textureManager, ViewportScissor viewportScissor) {
+    public void draw(OrthographicCamera camera, SwapChain swapChain, ResourceManager resourceManager, ViewportScissor viewportScissor) {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             long inFlightFence = this.inFlightFences[this.frameInFlightIndex];
 
@@ -148,7 +148,7 @@ public class BatchRenderer implements AutoCloseable {
             int imageIndex = this.imageIndexBuffer.get(0);
             FrameResources frameResources = this.frameResources[this.frameInFlightIndex];
 
-            frameResources.recordGraphicsCommands(stack, swapChain, textureManager, viewportScissor, this.pipeline, imageIndex, this.clearColor, camera);
+            frameResources.recordGraphicsCommands(stack, swapChain, resourceManager, viewportScissor, this.pipeline, imageIndex, this.clearColor, camera);
 
             long renderFinishedSemaphore = this.renderFinishedSemaphores[imageIndex];
             frameResources.submitCommandBuffer(stack, imageAvailableSemaphore, renderFinishedSemaphore, inFlightFence);

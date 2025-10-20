@@ -10,11 +10,15 @@ import java.util.Set;
 import java.util.function.Consumer;
 
 public class KeyListener {
-    private final Set<Integer> pressedKeys = new HashSet<>();
-    private final Queue<Character> typedChars = new ArrayDeque<>();
-    private float timeSinceLastCharTyped = 0;
+    private final Set<Integer> pressedKeys;
+    private final Queue<Character> typedChars;
+    private float timeSinceLastCharTyped;
 
     public KeyListener(long window) {
+        this.pressedKeys = new HashSet<>();
+        this.typedChars = new ArrayDeque<>();
+        this.timeSinceLastCharTyped = 0;
+
         GLFW.glfwSetKeyCallback(window, this::handleKeyInput);
         GLFW.glfwSetCharCallback(window, this::handleCharTyping);
     }

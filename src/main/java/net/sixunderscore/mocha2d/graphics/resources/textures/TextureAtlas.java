@@ -1,4 +1,4 @@
-package net.sixunderscore.mocha2d.graphics.textures;
+package net.sixunderscore.mocha2d.graphics.resources.textures;
 
 import net.sixunderscore.mocha2d.vulkan.util.GpuBuffer;
 import net.sixunderscore.mocha2d.vulkan.VulkanManager;
@@ -56,26 +56,13 @@ public class TextureAtlas implements AutoCloseable {
     }
 
     private long createImageView(MemoryStack stack) {
-        VkComponentMapping componentMapping = VkComponentMapping.calloc(stack)
-                .r(VK14.VK_COMPONENT_SWIZZLE_IDENTITY)
-                .g(VK14.VK_COMPONENT_SWIZZLE_IDENTITY)
-                .b(VK14.VK_COMPONENT_SWIZZLE_IDENTITY)
-                .a(VK14.VK_COMPONENT_SWIZZLE_IDENTITY);
-
-        VkImageSubresourceRange subresourceRange = VkImageSubresourceRange.calloc(stack)
-                .aspectMask(VK14.VK_IMAGE_ASPECT_COLOR_BIT)
-                .baseMipLevel(0)
-                .levelCount(1)
-                .baseArrayLayer(0)
-                .layerCount(1);
-
         VkImageViewCreateInfo imageViewCreateInfo = VkImageViewCreateInfo.calloc(stack)
                 .sType$Default()
                 .image(this.image)
                 .viewType(VK14.VK_IMAGE_VIEW_TYPE_2D)
                 .format(VK14.VK_FORMAT_R8G8B8A8_SRGB)
-                .components(componentMapping)
-                .subresourceRange(subresourceRange);
+                .components(c -> c.set(VK14.VK_COMPONENT_SWIZZLE_IDENTITY, VK14.VK_COMPONENT_SWIZZLE_IDENTITY, VK14.VK_COMPONENT_SWIZZLE_IDENTITY, VK14.VK_COMPONENT_SWIZZLE_IDENTITY))
+                .subresourceRange(s -> s.set(VK14.VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1));
 
         LongBuffer imageViewBuff = stack.mallocLong(1);
         if (VK14.vkCreateImageView(VulkanManager.getLogicalDevice(), imageViewCreateInfo, null, imageViewBuff) != VK14.VK_SUCCESS) {
@@ -124,15 +111,15 @@ public class TextureAtlas implements AutoCloseable {
         VK14.vkCmdPipelineBarrier2(cmdBuffer, dependencyInfo);
     }
 
-    long getImageView() {
+    public long getImageView() {
         return this.imageView;
     }
 
-    int getImageIndex() {
+    public int getImageIndex() {
         return this.imageIndex;
     }
 
-    boolean isPixelated() {
+    public boolean isPixelated() {
         return this.pixelated;
     }
 

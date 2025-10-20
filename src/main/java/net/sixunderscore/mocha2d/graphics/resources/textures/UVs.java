@@ -1,4 +1,4 @@
-package net.sixunderscore.mocha2d.graphics.textures;
+package net.sixunderscore.mocha2d.graphics.resources.textures;
 
 import org.joml.Vector2f;
 

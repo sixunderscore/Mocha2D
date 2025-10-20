@@ -1,8 +1,8 @@
 package net.sixunderscore.mocha2d;
 
 import net.sixunderscore.mocha2d.graphics.render.BatchRenderer;
-import net.sixunderscore.mocha2d.graphics.textures.TextureData;
-import net.sixunderscore.mocha2d.graphics.textures.TextureManager;
+import net.sixunderscore.mocha2d.graphics.resources.textures.TextureData;
+import net.sixunderscore.mocha2d.graphics.resources.ResourceManager;
 import net.sixunderscore.mocha2d.util.*;
 import net.sixunderscore.mocha2d.util.FpsHelper;
 import net.sixunderscore.mocha2d.util.Screen;
@@ -24,7 +24,7 @@ public class Window {
     private static ViewportScissor viewportScissor;
     private static SwapChain swapChain;
     private static boolean shouldRebuildSwapChain = false;
-    private static TextureManager texManager;
+    private static ResourceManager resourceManager;
     private static Screen screen;
     private static BatchRenderer batch;
     private static OrthographicCamera camera;
@@ -71,12 +71,12 @@ public class Window {
         surface = createSurface();
         viewportScissor = new ViewportScissor();
         swapChain = new SwapChain(surface, viewportScissor.getScissor().extent(), settings.isVSyncEnabled());
-        texManager = new TextureManager(settings.getTextureFiles(), settings.getTtfFiles());
+        resourceManager = new ResourceManager(settings.getTextureFiles(), settings.getTtfFiles());
 
         screen = initialScreen;
-        screen.init(texManager);
+        screen.init(resourceManager);
         camera = new OrthographicCamera();
-        batch = new BatchRenderer(texManager, swapChain, settings.getClearColor());
+        batch = new BatchRenderer(resourceManager, swapChain, settings.getClearColor());
         fpsHelper = new FpsHelper(settings.getFpsCap());
         deltaTime = new DeltaTime();
     }
@@ -97,7 +97,7 @@ public class Window {
             screen.update(keyListener, mouseListener);
             screen.render(batch);
 
-            batch.draw(camera, swapChain, texManager, viewportScissor);
+            batch.draw(camera, swapChain, resourceManager, viewportScissor);
 
             keyListener.timedClearCharBuffer();
             fpsHelper.cap();
@@ -134,7 +134,7 @@ public class Window {
     public static void setScreen(Screen newScreen) {
         screen.cleanUp();
         screen = newScreen;
-        screen.init(texManager);
+        screen.init(resourceManager);
     }
 
     public static void setClearColor(Color color) {
@@ -161,7 +161,7 @@ public class Window {
         screen.cleanUp();
         camera.close();
         batch.close();
-        texManager.close();
+        resourceManager.close();
         viewportScissor.close();
         swapChain.close();
         KHRSurface.vkDestroySurfaceKHR(VulkanManager.getInstance(), surface, null);
