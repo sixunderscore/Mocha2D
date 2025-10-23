@@ -11,6 +11,7 @@ import net.sixunderscore.mocha2d.input.MouseListener;
 
 public class SampleScreen implements Screen {
     private TextureRegion logoTexture;
+    private float t;
     private float spinningDegrees;
     private TextRenderer textRenderer;
 
@@ -22,11 +23,13 @@ public class SampleScreen implements Screen {
 
     @Override
     public void update(KeyListener keyListener, MouseListener mouseListener) {
-        if (this.spinningDegrees >= 360) {
-            this.spinningDegrees = 0;
-        } else {
-            this.spinningDegrees += Window.getDeltaTime() * 75;
+        this.t += Window.getDeltaTime() * 0.6f;
+
+        if (this.t >= 1f) {
+            this.t = 0;
         }
+
+        this.spinningDegrees = org.joml.Math.lerp(0, 360f, t);
     }
 
     @Override
