@@ -1,6 +1,8 @@
 package net.sixunderscore.mocha2d.graphics.render;
 
 import net.sixunderscore.mocha2d.graphics.resources.ResourceManager;
+import net.sixunderscore.mocha2d.graphics.resources.text.BitmapFont;
+import net.sixunderscore.mocha2d.graphics.resources.text.GlyphData;
 import net.sixunderscore.mocha2d.graphics.resources.textures.TextureRegion;
 import net.sixunderscore.mocha2d.graphics.resources.textures.UVs;
 import net.sixunderscore.mocha2d.util.Color;
@@ -132,6 +134,34 @@ public class BatchRenderer implements AutoCloseable {
                 .put(index)
                 .put(rotationSin).put(rotationCos)
                 .put(pivotX).put(pivotY);
+    }
+
+    public void addText(BitmapFont bitmapFont, String text, float x, float y, float charScale) {
+        float cursorX = x;
+        float cursorY = y;
+        int strLength = text.length();
+        int charResolution = bitmapFont.getCharResolution();
+
+        for (int i = 0; i < strLength; ++i) {
+            char c = text.charAt(i);
+
+            switch (c) {
+                case ' ' -> cursorX += (charResolution * charScale) / 2.5f;
+                case '\t' -> cursorX += (charResolution * charScale) * 1.5f;
+                case '\n' -> {
+                    cursorX = x;
+                    cursorY -= charResolution * charScale;
+                }
+                default -> {
+                    GlyphData glyphData = bitmapFont.getGlyphData(c);
+                    TextureRegion textureRegion = glyphData.textureRegion();
+
+                    this.addSprite(textureRegion, cursorX, cursorY + glyphData.descent() * charScale, textureRegion.width() * charScale, textureRegion.height() * charScale);
+
+                    cursorX += glyphData.advance() * charScale;
+                }
+            }
+        }
     }
 
     public void draw(OrthographicCamera camera, SwapChain swapChain, ResourceManager resourceManager, ViewportScissor viewportScissor) {

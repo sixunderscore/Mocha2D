@@ -7,7 +7,7 @@ import net.sixunderscore.mocha2d.graphics.resources.textures.TextureRegion;
 import net.sixunderscore.mocha2d.vulkan.util.CommandPool;
 import net.sixunderscore.mocha2d.vulkan.util.SyncUtils;
 import net.sixunderscore.mocha2d.graphics.resources.text.TextData;
-import net.sixunderscore.mocha2d.graphics.resources.text.TextRenderer;
+import net.sixunderscore.mocha2d.graphics.resources.text.BitmapFont;
 import net.sixunderscore.mocha2d.vulkan.util.GpuBuffer;
 import net.sixunderscore.mocha2d.vulkan.VulkanManager;
 import net.sixunderscore.mocha2d.util.ResourceUtils;
@@ -27,7 +27,7 @@ import java.util.Map;
 
 public class ResourceManager implements AutoCloseable {
     private final Map<String, TextureAtlas> atlasMap;
-    private final Map<String, TextRenderer> textRendererMap;
+    private final Map<String, BitmapFont> bitmapFontMap;
     private final long descriptorPool;
     private final long descriptorSet;
     private final long descriptorSetLayout;
@@ -42,7 +42,7 @@ public class ResourceManager implements AutoCloseable {
 
         try (MemoryStack stack = MemoryStack.stackPush()) {
             this.atlasMap = new HashMap<>(textureFiles.length);
-            this.textRendererMap = new HashMap<>(ttfFiles.length);
+            this.bitmapFontMap = new HashMap<>(ttfFiles.length);
             this.totalTextures = textureFiles.length + ttfFiles.length;
 
             this.descriptorPool = createDescriptorPool(stack);
@@ -143,9 +143,9 @@ public class ResourceManager implements AutoCloseable {
             }
 
             for (TtfFile file : ttfFiles) {
-                Map.Entry<TextRenderer, TextureAtlas> textRendererAndAtlas = this.createTextRenderer(stack, commandBuffer, file, textureIndex++, stagingBuffersToFree);
-                this.textRendererMap.put(file.resourceKey(), textRendererAndAtlas.getKey());
-                this.atlasMap.put(file.resourceKey() + "_atlas", textRendererAndAtlas.getValue());
+                Map.Entry<BitmapFont, TextureAtlas> bitmapFontAndAtlas = this.createBitmapFont(stack, commandBuffer, file, textureIndex++, stagingBuffersToFree);
+                this.bitmapFontMap.put(file.resourceKey(), bitmapFontAndAtlas.getKey());
+                this.atlasMap.put(file.resourceKey() + "_atlas", bitmapFontAndAtlas.getValue());
             }
 
             VK14.vkEndCommandBuffer(commandBuffer);
@@ -169,7 +169,7 @@ public class ResourceManager implements AutoCloseable {
         // Clean up all staging buffers after textures have been uploaded
         stagingBuffersToFree.forEach(GpuBuffer::close);
 
-        // Adding regular textures and text renderer font atlas textures to descriptor set
+        // Adding regular textures and bitmap font atlas textures to descriptor set
         VkDescriptorImageInfo.Buffer descriptorImagesInfo = VkDescriptorImageInfo.calloc(this.totalTextures, stack);
 
         for (TextureAtlas atlas : this.atlasMap.values()) {
@@ -204,7 +204,7 @@ public class ResourceManager implements AutoCloseable {
         }
     }
 
-    private Map.Entry<TextRenderer, TextureAtlas> createTextRenderer(MemoryStack stack, VkCommandBuffer commandBuffer, TtfFile file, int textureIndex, List<GpuBuffer> stagingBuffersToFree) {
+    private Map.Entry<BitmapFont, TextureAtlas> createBitmapFont(MemoryStack stack, VkCommandBuffer commandBuffer, TtfFile file, int textureIndex, List<GpuBuffer> stagingBuffersToFree) {
         STBTTFontinfo fontInfo = STBTTFontinfo.malloc(stack);
         ByteBuffer ttfFileData = ResourceUtils.loadRawFile(file.path());
 
@@ -231,13 +231,13 @@ public class ResourceManager implements AutoCloseable {
             // Upload data from staging buffer to GPU memory
             fontAtlas.recordUploadCommands(stack, commandBuffer, stagingImageBuffer);
 
-            TextRenderer textRenderer = new TextRenderer(fontAtlas, charResolution, charData, fontInfo);
+            BitmapFont bitmapFont = new BitmapFont(fontAtlas, charResolution, charData, fontInfo);
 
             MemoryUtil.memFree(grayscaleImageBuffer);
             MemoryUtil.memFree(ttfFileData);
             stagingBuffersToFree.add(stagingImageBuffer);
 
-            return Map.entry(textRenderer, fontAtlas);
+            return Map.entry(bitmapFont, fontAtlas);
         }
     }
 
@@ -249,8 +249,8 @@ public class ResourceManager implements AutoCloseable {
         return this.atlasMap.get(resourceKey).getRegion(startX, endX, startY, endY);
     }
 
-    public TextRenderer getTextRenderer(String resourceKey) {
-        return this.textRendererMap.get(resourceKey);
+    public BitmapFont getBitmapFont(String resourceKey) {
+        return this.bitmapFontMap.get(resourceKey);
     }
 
     public long getDescriptorSetLayout() {

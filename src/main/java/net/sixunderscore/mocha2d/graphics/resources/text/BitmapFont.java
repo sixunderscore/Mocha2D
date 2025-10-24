@@ -1,6 +1,5 @@
 package net.sixunderscore.mocha2d.graphics.resources.text;
 
-import net.sixunderscore.mocha2d.graphics.render.BatchRenderer;
 import net.sixunderscore.mocha2d.graphics.resources.textures.TextureAtlas;
 import net.sixunderscore.mocha2d.graphics.resources.textures.TextureRegion;
 import org.lwjgl.stb.STBTTBakedChar;
@@ -10,11 +9,11 @@ import org.lwjgl.system.MemoryStack;
 
 import java.nio.IntBuffer;
 
-public class TextRenderer {
+public class BitmapFont {
     private final GlyphData[] glyphDataArr;
     private final int charResolution;
 
-    public TextRenderer(TextureAtlas fontAtlas, int charResolution, STBTTBakedChar.Buffer charsData, STBTTFontinfo fontInfo) {
+    public BitmapFont(TextureAtlas fontAtlas, int charResolution, STBTTBakedChar.Buffer charsData, STBTTFontinfo fontInfo) {
         this.glyphDataArr = new GlyphData[TextData.NUM_CHARS];
         this.charResolution = charResolution;
         this.loadTextureRegionsAndGlyphData(fontAtlas, charsData, fontInfo, charResolution);
@@ -45,31 +44,12 @@ public class TextRenderer {
         return (float) y0.get(0) * fontScale;
     }
 
-    public void renderText(BatchRenderer batch, String text, float x, float y, float charScale) {
-        float cursorX = x;
-        float cursorY = y;
-        int strLength = text.length();
+    public GlyphData getGlyphData(char c) {
+        int index = c - TextData.FIRST_CHAR;
+        return index >= 0 && index < TextData.NUM_CHARS ? this.glyphDataArr[index] : this.glyphDataArr['?' - TextData.FIRST_CHAR];
+    }
 
-        for (int i = 0; i < strLength; ++i) {
-            char c = text.charAt(i);
-
-            switch (c) {
-                case ' ' -> cursorX += (this.charResolution * charScale) / 2.5f;
-                case '\t' -> cursorX += (this.charResolution * charScale) * 1.5f;
-                case '\n' -> {
-                    cursorX = x;
-                    cursorY -= this.charResolution * charScale;
-                }
-                default -> {
-                    int arrayIndex = c - TextData.FIRST_CHAR;
-                    GlyphData glyphData = arrayIndex >= 0 && arrayIndex < TextData.NUM_CHARS ? this.glyphDataArr[arrayIndex] : this.glyphDataArr['?' - TextData.FIRST_CHAR];
-                    TextureRegion textureRegion = glyphData.textureRegion();
-
-                    batch.addSprite(textureRegion, cursorX, cursorY + glyphData.descent() * charScale, textureRegion.width() * charScale, textureRegion.height() * charScale);
-
-                    cursorX += glyphData.advance() * charScale;
-                }
-            }
-        }
+    public int getCharResolution() {
+        return this.charResolution;
     }
 }
