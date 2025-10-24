@@ -1,6 +1,6 @@
 package net.sixunderscore.mocha2d.graphics.resources;
 
-import net.sixunderscore.mocha2d.graphics.resources.text.FontBitmapResolution;
+import net.sixunderscore.mocha2d.graphics.resources.text.BitmapFontResolution;
 import net.sixunderscore.mocha2d.graphics.resources.textures.TextureAtlas;
 import net.sixunderscore.mocha2d.graphics.resources.textures.TextureData;
 import net.sixunderscore.mocha2d.graphics.resources.textures.TextureRegion;
@@ -213,7 +213,7 @@ public class ResourceManager implements AutoCloseable {
         }
 
         // Font atlas dimensions
-        FontBitmapResolution bitmapResolution = file.bitmapResolution();
+        BitmapFontResolution bitmapResolution = file.bitmapResolution();
         int charResolution = bitmapResolution.getCharResolution();
         int grayscaleSideSize = bitmapResolution.getAtlasSideSize();
         int grayscaleTotalSize = grayscaleSideSize * grayscaleSideSize;
