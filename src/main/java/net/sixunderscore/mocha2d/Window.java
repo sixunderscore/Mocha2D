@@ -40,6 +40,9 @@ public class Window {
     }
 
     private static void init(WindowSettings settings, Screen initialScreen) {
+        System.setProperty("joml.fastmath", "true");
+        System.setProperty("joml.sinLookup", "true");
+
         GLFWErrorCallback.createPrint(System.err).set();
 
         if (!GLFW.glfwInit()) {

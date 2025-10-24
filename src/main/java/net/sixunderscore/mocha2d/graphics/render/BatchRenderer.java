@@ -101,8 +101,8 @@ public class BatchRenderer implements AutoCloseable {
         float rotationCos = 1f;
         if (Math.abs(rotationDegrees) > 0.001f) {
             float rotationRadians = (float) Math.toRadians(rotationDegrees);
-            rotationSin = (float) Math.sin(rotationRadians);
-            rotationCos = (float) Math.cos(rotationRadians);
+            rotationSin = org.joml.Math.sin(rotationRadians);
+            rotationCos = org.joml.Math.cos(rotationRadians);
         }
 
         mappedVertexBuffer
