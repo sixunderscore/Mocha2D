@@ -20,9 +20,7 @@ void main() {
     float cos = rotationSinAndCos.y;
 
     vec2 translated = vertexPos - pivotPos;
-
-    vec2 rotated = mat2(cos, sin, -sin, cos) * translated;
-
+    vec2 rotated = mat2(cos, -sin, sin, cos) * translated;
     vec2 finalPos = rotated + pivotPos;
 
     gl_Position = pushConstants.viewProjection * vec4(finalPos, 0.0, 1.0);
