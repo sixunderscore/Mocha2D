@@ -29,7 +29,7 @@ public class SampleScreen implements Screen {
             this.t = 0;
         }
 
-        this.spinningDegrees = org.joml.Math.lerp(0, 360f, t);
+        this.spinningDegrees = org.joml.Math.lerp(0, 360f, this.t);
     }
 
     @Override
