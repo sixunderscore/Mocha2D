@@ -20,7 +20,7 @@ public class VulkanManager {
 
     public static void init() {
         try (MemoryStack stack = MemoryStack.stackPush()) {
-            instance = createInstance(stack, true);
+            instance = createInstance(stack);
             VkPhysicalDevice physicalDevice = pickPhysicalDevice(stack);
             graphicsQueueFamilyIndex = findGraphicsQueueFamilyIndex(stack, physicalDevice);
             logicalDevice = createLogicalDevice(stack, physicalDevice);
@@ -29,7 +29,7 @@ public class VulkanManager {
         }
     }
 
-    private static VkInstance createInstance(MemoryStack stack, boolean enabledDebugValidation) {
+    private static VkInstance createInstance(MemoryStack stack) {
         VkApplicationInfo applicationInfo = VkApplicationInfo.calloc(stack)
                 .sType$Default()
                 .pApplicationName(stack.UTF8("Mocha2D"))
@@ -42,6 +42,7 @@ public class VulkanManager {
             throw new IllegalStateException("GLFW Vulkan extensions not available");
         }
 
+        boolean enabledDebugValidation = true;
         PointerBuffer allExtensions;
         if (enabledDebugValidation) {
             allExtensions = stack.mallocPointer(glfwExtensions.remaining() + 1)
