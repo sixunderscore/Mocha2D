@@ -17,34 +17,26 @@ public class MouseListener {
         this.leftButtonPressed = false;
         this.rightButtonPressed = false;
 
-        GLFW.glfwSetMouseButtonCallback(window, this::handleMouseButtons);
-        GLFW.glfwSetCursorPosCallback(window, this::handleCursorMovement);
-        GLFW.glfwSetScrollCallback(window, this::handleScrollWheel);
-    }
-
-    private void handleMouseButtons(long window, int button, int action, int mods) {
-        if (action == GLFW.GLFW_PRESS) {
-            if (button == GLFW.GLFW_MOUSE_BUTTON_1) {
-                this.leftButtonPressed = true;
-            } else if (button == GLFW.GLFW_MOUSE_BUTTON_2) {
-                this.rightButtonPressed = true;
+        GLFW.glfwSetCursorPosCallback(window, (window2, xPos, yPos) -> this.mousePos.set(xPos, yPos));
+        GLFW.glfwSetMouseButtonCallback(window, (window2, button, action, mods) -> {
+            if (action == GLFW.GLFW_PRESS) {
+                if (button == GLFW.GLFW_MOUSE_BUTTON_1) {
+                    this.leftButtonPressed = true;
+                } else if (button == GLFW.GLFW_MOUSE_BUTTON_2) {
+                    this.rightButtonPressed = true;
+                }
+            } else if (action == GLFW.GLFW_RELEASE) {
+                if (button == GLFW.GLFW_MOUSE_BUTTON_1) {
+                    this.leftButtonPressed = false;
+                } else if (button == GLFW.GLFW_MOUSE_BUTTON_2) {
+                    this.rightButtonPressed = false;
+                }
             }
-        } else if (action == GLFW.GLFW_RELEASE) {
-            if (button == GLFW.GLFW_MOUSE_BUTTON_1) {
-                this.leftButtonPressed = false;
-            } else if (button == GLFW.GLFW_MOUSE_BUTTON_2) {
-                this.rightButtonPressed = false;
-            }
-        }
-    }
-
-    private void handleCursorMovement(long window, double xPosition, double yPosition) {
-        this.mousePos.set(xPosition, yPosition);
-    }
-
-    private void handleScrollWheel(long window, double xOffset, double yOffset) {
-        this.scrollXOffset = xOffset;
-        this.scrollYOffset = yOffset;
+        });
+        GLFW.glfwSetScrollCallback(window, (window2, xOffset, yOffset) -> {
+            this.scrollXOffset = xOffset;
+            this.scrollYOffset = yOffset;
+        });
     }
 
     public double xPos() {

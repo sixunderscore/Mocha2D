@@ -19,22 +19,18 @@ public class KeyListener {
         this.typedChars = new ArrayDeque<>();
         this.timeSinceLastCharTyped = 0;
 
-        GLFW.glfwSetKeyCallback(window, this::handleKeyInput);
-        GLFW.glfwSetCharCallback(window, this::handleCharTyping);
-    }
-
-    private void handleKeyInput(long window, int key, int scancode, int action, int mods) {
-        if (action == GLFW.GLFW_PRESS) {
-            this.pressedKeys.add(key);
-        }
-        else if (action == GLFW.GLFW_RELEASE) {
-            this.pressedKeys.remove(key);
-        }
-    }
-
-    private void handleCharTyping(long window, int codepoint) {
-        this.typedChars.add((char) codepoint);
-        this.timeSinceLastCharTyped = 0;
+        GLFW.glfwSetKeyCallback(window, (window2, key, scancode, action, mods) -> {
+            if (action == GLFW.GLFW_PRESS) {
+                this.pressedKeys.add(key);
+            }
+            else if (action == GLFW.GLFW_RELEASE) {
+                this.pressedKeys.remove(key);
+            }
+        });
+        GLFW.glfwSetCharCallback(window, (window2, codepoint) -> {
+            this.typedChars.add((char) codepoint);
+            this.timeSinceLastCharTyped = 0;
+        });
     }
 
     public void timedClearCharBuffer() {

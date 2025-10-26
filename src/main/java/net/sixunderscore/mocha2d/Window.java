@@ -66,7 +66,13 @@ public class Window {
             throw new IllegalStateException("Failed to create Window");
         }
 
-        GLFW.glfwSetFramebufferSizeCallback(window, Window::updateViewport);
+        GLFW.glfwSetWindowSizeCallback(window, (window, newWidth, newHeight) -> {
+            width = newWidth;
+            height = newHeight;
+            camera.adjustProjection();
+            shouldRebuildSwapChain = true;
+        });
+
         keyListener = new KeyListener(window);
         mouseListener = new MouseListener(window);
         setWindowIcon(settings.getWindowIconPath());
@@ -125,13 +131,6 @@ public class Window {
         }
 
         return surfaceArr[0];
-    }
-
-    private static void updateViewport(long window, int newWidth, int newHeight) {
-        width = newWidth;
-        height = newHeight;
-        camera.adjustProjection();
-        shouldRebuildSwapChain = true;
     }
 
     public static void setScreen(Screen newScreen) {
