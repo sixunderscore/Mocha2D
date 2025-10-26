@@ -77,11 +77,15 @@ public class Window {
             shouldRebuildSwapChain = true;
         });
 
+        setWindowIcon(settings.getWindowIconPath());
         keyListener = new KeyListener(window);
         mouseListener = new MouseListener(window);
-        setWindowIcon(settings.getWindowIconPath());
 
-        surface = createSurface();
+        long[] surfaceArr = new long[1];
+        if (GLFWVulkan.glfwCreateWindowSurface(VulkanManager.getInstance(), window, null, surfaceArr) != VK14.VK_SUCCESS) {
+            throw new IllegalStateException("Failed to create Vulkan surface");
+        }
+        surface = surfaceArr[0];
         viewportScissor = new ViewportScissor();
         swapChain = new SwapChain(surface, viewportScissor.getScissor().extent(), settings.isVSyncEnabled());
         resourceManager = new ResourceManager(settings.getTextureFiles(), settings.getTtfFiles());
@@ -126,15 +130,6 @@ public class Window {
                 GLFW.glfwSetWindowIcon(window, icons);
             }
         }
-    }
-
-    private static long createSurface() {
-        long[] surfaceArr = new long[1];
-        if (GLFWVulkan.glfwCreateWindowSurface(VulkanManager.getInstance(), window, null, surfaceArr) != VK14.VK_SUCCESS) {
-            throw new IllegalStateException("Failed to create Vulkan surface");
-        }
-
-        return surfaceArr[0];
     }
 
     public static void setScreen(Screen newScreen) {
