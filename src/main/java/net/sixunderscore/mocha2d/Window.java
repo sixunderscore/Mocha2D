@@ -59,14 +59,18 @@ public class Window {
         GLFW.glfwWindowHint(GLFW.GLFW_CLIENT_API, GLFW.GLFW_NO_API);
         GLFW.glfwWindowHint(GLFW.GLFW_RESIZABLE, settings.isResizeable() ? GLFW.GLFW_TRUE : GLFW.GLFW_FALSE);
 
-        width = settings.getInitialWidth();
-        height = settings.getInitialHeight();
-        window = GLFW.glfwCreateWindow(width, height, settings.getWindowName(), MemoryUtil.NULL, MemoryUtil.NULL);
+        window = GLFW.glfwCreateWindow(settings.getInitialWidth(), settings.getInitialHeight(), settings.getWindowName(), MemoryUtil.NULL, MemoryUtil.NULL);
         if (window == MemoryUtil.NULL) {
             throw new IllegalStateException("Failed to create Window");
         }
 
-        GLFW.glfwSetWindowSizeCallback(window, (window, newWidth, newHeight) -> {
+        int[] fbWidth = new int[1];
+        int[] fbHeight = new int[1];
+        GLFW.glfwGetFramebufferSize(window, fbWidth, fbHeight);
+        width = fbWidth[0];
+        height = fbHeight[0];
+
+        GLFW.glfwSetFramebufferSizeCallback(window, (window, newWidth, newHeight) -> {
             width = newWidth;
             height = newHeight;
             camera.adjustProjection();

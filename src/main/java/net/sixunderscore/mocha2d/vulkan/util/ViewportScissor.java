@@ -11,18 +11,24 @@ public class ViewportScissor implements AutoCloseable {
     private final VkRect2D.Buffer scissor;
 
     public ViewportScissor() {
+        int width = Window.getWidth();
+        int height = Window.getHeight();
+
         this.viewport = VkViewport.malloc(1);
-        this.viewport.get(0).set(0, 0, Window.getWidth(), Window.getHeight(), 0, 1);
+        this.viewport.get(0).set(0, 0, width, height, 0, 1);
         this.scissor = VkRect2D.malloc(1);
         this.scissor.get(0).set(
                 VkOffset2D.malloc().set(0, 0),
-                VkExtent2D.malloc().set(Window.getWidth(), Window.getHeight())
+                VkExtent2D.malloc().set(width, height)
         );
     }
 
     public void update() {
-        this.viewport.get(0).set(0, 0, Window.getWidth(), Window.getHeight(), 0, 1);
-        this.scissor.get(0).extent().set(Window.getWidth(), Window.getHeight());
+        int width = Window.getWidth();
+        int height = Window.getHeight();
+
+        this.viewport.get(0).set(0, 0, width, height, 0, 1);
+        this.scissor.get(0).extent().set(width, height);
     }
 
     public VkViewport.Buffer getViewport() {
