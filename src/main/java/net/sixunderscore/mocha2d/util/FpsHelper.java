@@ -5,7 +5,7 @@ import net.sixunderscore.mocha2d.Window;
 public class FpsHelper {
     // Fps Cap
     private final boolean shouldCap;
-    private final long frameCapDurationNanos;
+    private final long targetFrameDurationNanos;
     private long nextFrameTimeNanos;
     // Fps Counter
     private int fpsCount;
@@ -13,11 +13,11 @@ public class FpsHelper {
 
     public FpsHelper(int fpsCap) {
         if (fpsCap > 0) {
-            this.frameCapDurationNanos = 1_000_000_000L / fpsCap;
-            this.nextFrameTimeNanos = System.nanoTime() + this.frameCapDurationNanos;
+            this.targetFrameDurationNanos = 1_000_000_000L / fpsCap;
+            this.nextFrameTimeNanos = System.nanoTime() + this.targetFrameDurationNanos;
             this.shouldCap = true;
         } else {
-            this.frameCapDurationNanos = 0;
+            this.targetFrameDurationNanos = 0;
             this.shouldCap = false;
         }
 
@@ -47,10 +47,7 @@ public class FpsHelper {
             Thread.onSpinWait();
         }
 
-        this.nextFrameTimeNanos = Math.max(
-            nextFrameTimeNanos + frameCapDurationNanos, 
-            System.nanoTime() + frameCapDurationNanos
-        );
+        this.nextFrameTimeNanos = Math.max(this.nextFrameTimeNanos + this.targetFrameDurationNanos, System.nanoTime() + this.targetFrameDurationNanos);
     }
 
     public void updateCount() {
