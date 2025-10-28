@@ -30,11 +30,24 @@ public class FpsHelper {
             return;
         }
 
-        while ((this.nextFrameTimeNanos - System.nanoTime()) > 0) {
+        // Sleep 85% of the total time to add a bit of padding in case the thread oversleeps
+        try {
+            long capTimeNanos = Math.max(this.nextFrameTimeNanos - System.nanoTime(), 0);
+            long sleepTarget = (long) (capTimeNanos * 0.85);
+
+            long sleepMillis = sleepTarget / 1_000_000;
+            int sleepNanos = (int) (sleepTarget % 1_000_000);
+
+            Thread.sleep(sleepMillis, sleepNanos);
+        } catch (InterruptedException ignored) {
+        }
+
+        // If the thread wakes up before the total time is over spin wait the remaining time
+        while (System.nanoTime() < this.nextFrameTimeNanos) {
             Thread.onSpinWait();
         }
 
-        this.nextFrameTimeNanos = Math.max(this.nextFrameTimeNanos + this.frameCapDurationNanos, System.nanoTime());
+        this.nextFrameTimeNanos = System.nanoTime() + this.frameCapDurationNanos;
     }
 
     public void updateCount() {
