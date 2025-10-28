@@ -47,7 +47,10 @@ public class FpsHelper {
             Thread.onSpinWait();
         }
 
-        this.nextFrameTimeNanos = System.nanoTime() + this.frameCapDurationNanos;
+        this.nextFrameTimeNanos = Math.max(
+            nextFrameTimeNanos + frameCapDurationNanos, 
+            System.nanoTime() + frameCapDurationNanos
+        );
     }
 
     public void updateCount() {
