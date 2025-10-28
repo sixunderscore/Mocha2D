@@ -14,7 +14,7 @@ public class FpsHelper {
     public FpsHelper(int fpsCap) {
         if (fpsCap > 0) {
             this.frameCapDurationNanos = 1_000_000_000L / fpsCap;
-            this.nextFrameTimeNanos = System.nanoTime();
+            this.nextFrameTimeNanos = System.nanoTime() + this.frameCapDurationNanos;
             this.shouldCap = true;
         } else {
             this.frameCapDurationNanos = 0;
