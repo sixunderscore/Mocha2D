@@ -2,15 +2,14 @@ package net.sixunderscore.mocha2d.util;
 
 import net.sixunderscore.mocha2d.graphics.render.BatchRenderer;
 import net.sixunderscore.mocha2d.graphics.resources.ResourceManager;
-import net.sixunderscore.mocha2d.input.KeyListener;
-import net.sixunderscore.mocha2d.input.MouseListener;
 
 public interface Screen {
     void init(ResourceManager resourceManager);
-
-    void update(KeyListener keyListener, MouseListener mouseListener);
-
+    default void onMouseMoved(double xPos, double yPos) {}
+    default void onMouseClicked(int button, int action, int mods) {}
+    default void onMouseScrolled(double xOffset, double yOffset) {}
+    default void onKeyPressed(int keycode, int scancode, int action, int mods) {}
+    default void onCharTyped(int codepoint) {}
     void render(BatchRenderer batch);
-
     default void cleanUp() {}
 }

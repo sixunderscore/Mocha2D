@@ -7,8 +7,6 @@ import net.sixunderscore.mocha2d.util.*;
 import net.sixunderscore.mocha2d.util.FpsHelper;
 import net.sixunderscore.mocha2d.util.Screen;
 import net.sixunderscore.mocha2d.vulkan.VulkanManager;
-import net.sixunderscore.mocha2d.input.KeyListener;
-import net.sixunderscore.mocha2d.input.MouseListener;
 import net.sixunderscore.mocha2d.vulkan.util.SwapChain;
 import net.sixunderscore.mocha2d.vulkan.util.ViewportScissor;
 import org.lwjgl.glfw.*;
@@ -28,8 +26,7 @@ public class Window {
     private static Screen screen;
     private static BatchRenderer batch;
     private static OrthographicCamera camera;
-    private static KeyListener keyListener;
-    private static MouseListener mouseListener;
+    private static InputCallbackManager inputCallbackManager;
     private static FpsHelper fpsHelper;
     private static DeltaTime deltaTime;
 
@@ -78,8 +75,6 @@ public class Window {
         });
 
         setWindowIcon(settings.getWindowIconPath());
-        keyListener = new KeyListener(window);
-        mouseListener = new MouseListener(window);
 
         long[] surfaceArr = new long[1];
         if (GLFWVulkan.glfwCreateWindowSurface(VulkanManager.getInstance(), window, null, surfaceArr) != VK14.VK_SUCCESS) {
@@ -92,6 +87,7 @@ public class Window {
 
         screen = initialScreen;
         screen.init(resourceManager);
+        inputCallbackManager = new InputCallbackManager(window, screen);
         camera = new OrthographicCamera();
         batch = new BatchRenderer(resourceManager, swapChain, settings.getClearColor());
         fpsHelper = new FpsHelper(settings.getFpsCap());
@@ -110,13 +106,10 @@ public class Window {
             fpsHelper.updateCount();
 
             GLFW.glfwPollEvents();
-
-            screen.update(keyListener, mouseListener);
             screen.render(batch);
 
             batch.draw(camera, swapChain, resourceManager, viewportScissor);
 
-            keyListener.timedClearCharBuffer();
             fpsHelper.cap();
         }
     }
@@ -136,6 +129,7 @@ public class Window {
         screen.cleanUp();
         screen = newScreen;
         screen.init(resourceManager);
+        inputCallbackManager.setCallbacks(window, screen);
     }
 
     public static void setClearColor(Color color) {
@@ -168,7 +162,6 @@ public class Window {
         KHRSurface.vkDestroySurfaceKHR(VulkanManager.getInstance(), surface, null);
         VulkanManager.cleanUp();
         GLFW.glfwSetErrorCallback(null).free();
-
         Callbacks.glfwFreeCallbacks(window);
         GLFW.glfwDestroyWindow(window);
         GLFW.glfwTerminate();
