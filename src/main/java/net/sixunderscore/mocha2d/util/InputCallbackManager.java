@@ -2,7 +2,7 @@ package net.sixunderscore.mocha2d.util;
 
 import org.lwjgl.glfw.*;
 
-public class InputCallbackManager implements AutoCloseable {
+public class InputCallbackManager {
     private GLFWCursorPosCallback cursorPosCallback;
     private GLFWMouseButtonCallback mouseButtonCallback;
     private GLFWScrollCallback scrollCallback;
@@ -14,7 +14,7 @@ public class InputCallbackManager implements AutoCloseable {
     }
 
     public void setCallbacks(long window, Screen screen) {
-        this.freeCallbacks();
+        this.cleanUp();
 
         // Mouse
         this.cursorPosCallback = GLFW.glfwSetCursorPosCallback(window, (window2, xPos, yPos) -> screen.onMouseMoved(xPos, yPos));
@@ -26,7 +26,7 @@ public class InputCallbackManager implements AutoCloseable {
         this.charCallback = GLFW.glfwSetCharCallback(window, (window2, codepoint) -> screen.onCharTyped(codepoint));
     }
 
-    private void freeCallbacks() {
+    private void cleanUp() {
         if (this.cursorPosCallback != null) {
             this.cursorPosCallback.close();
         }
@@ -42,10 +42,5 @@ public class InputCallbackManager implements AutoCloseable {
         if (this.charCallback != null) {
             this.charCallback.close();
         }
-    }
-
-    @Override
-    public void close() {
-        this.freeCallbacks();
     }
 }
