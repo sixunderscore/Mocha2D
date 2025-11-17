@@ -16,7 +16,7 @@ public class GraphicsPipeline implements AutoCloseable {
 
     public GraphicsPipeline(MemoryStack stack, ResourceManager resourceManager, SwapChain swapChain, String vertexShaderPath, String fragmentShaderPath) {
         this.pipelineLayout = this.createPipelineLayout(stack, resourceManager);
-        this.pipeline = this.createPipeline(stack, resourceManager, swapChain, vertexShaderPath, fragmentShaderPath);
+        this.pipeline = this.createPipeline(stack, swapChain, vertexShaderPath, fragmentShaderPath);
     }
 
     private long createPipelineLayout(MemoryStack stack, ResourceManager resourceManager) {
@@ -37,7 +37,7 @@ public class GraphicsPipeline implements AutoCloseable {
         return pipeLineLayoutBuff.get(0);
     }
 
-    private long createPipeline(MemoryStack stack, ResourceManager resourceManager, SwapChain swapChain, String vertexShaderPath, String fragmentShaderPath) {
+    private long createPipeline(MemoryStack stack, SwapChain swapChain, String vertexShaderPath, String fragmentShaderPath) {
         long vertexShader = createShaderModule(stack, ResourceUtils.loadRawFile(vertexShaderPath));
         long fragmentShader = createShaderModule(stack, ResourceUtils.loadRawFile(fragmentShaderPath));
 
@@ -48,16 +48,11 @@ public class GraphicsPipeline implements AutoCloseable {
                 .module(vertexShader)
                 .pName(stack.ASCII("main"));
 
-        VkSpecializationMapEntry.Buffer specializationMapEntry = VkSpecializationMapEntry.calloc(1, stack);
-        specializationMapEntry.get(0).set(0, 0, Integer.BYTES);
-        VkSpecializationInfo specializationInfo = VkSpecializationInfo.calloc(stack).set(specializationMapEntry, stack.malloc(Integer.BYTES).putInt(0, resourceManager.getDescriptorCount()));
-
         shaderStageCreateInfos.get(1)
                 .sType$Default()
                 .stage(VK14.VK_SHADER_STAGE_FRAGMENT_BIT)
                 .module(fragmentShader)
-                .pName(stack.ASCII("main"))
-                .pSpecializationInfo(specializationInfo);
+                .pName(stack.ASCII("main"));
 
         // Total vertex buffer data
         VkVertexInputBindingDescription.Buffer vertexBindingDescriptions = VkVertexInputBindingDescription.malloc(1, stack);

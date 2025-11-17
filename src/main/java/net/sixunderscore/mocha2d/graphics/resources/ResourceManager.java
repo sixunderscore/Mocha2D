@@ -33,7 +33,6 @@ public class ResourceManager implements AutoCloseable {
     private final long descriptorSetLayout;
     private final long linearSampler;
     private final long nearestSampler;
-    private final int totalTextures;
 
     public ResourceManager(TextureFile[] textureFiles, TtfFile[] ttfFiles) {
         if (textureFiles.length == 0 && ttfFiles.length == 0) {
@@ -43,22 +42,22 @@ public class ResourceManager implements AutoCloseable {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             this.atlasMap = new HashMap<>(textureFiles.length);
             this.bitmapFontMap = new HashMap<>(ttfFiles.length);
-            this.totalTextures = textureFiles.length + ttfFiles.length;
+            int textureCount = textureFiles.length + ttfFiles.length;
 
-            this.descriptorPool = createDescriptorPool(stack);
-            this.descriptorSetLayout = createDescriptorSetLayout(stack);
+            this.descriptorPool = createDescriptorPool(stack, textureCount);
+            this.descriptorSetLayout = createDescriptorSetLayout(stack, textureCount);
             this.descriptorSet = allocateDescriptorSet(stack);
 
             this.linearSampler = createSampler(stack, VK14.VK_FILTER_LINEAR, VK14.VK_FILTER_LINEAR);
             this.nearestSampler = createSampler(stack, VK14.VK_FILTER_NEAREST, VK14.VK_FILTER_NEAREST);
 
-            this.uploadTextures(stack, textureFiles, ttfFiles);
+            this.uploadTextures(stack, textureFiles, ttfFiles, textureCount);
         }
     }
 
-    private long createDescriptorPool(MemoryStack stack) {
+    private long createDescriptorPool(MemoryStack stack, int textureCount) {
         VkDescriptorPoolSize.Buffer descriptorPoolSizes = VkDescriptorPoolSize.calloc(1, stack);
-        descriptorPoolSizes.get(0).set(VK14.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, this.totalTextures);
+        descriptorPoolSizes.get(0).set(VK14.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, textureCount);
 
         VkDescriptorPoolCreateInfo descriptorPoolCreateInfo = VkDescriptorPoolCreateInfo.calloc(stack)
                 .sType$Default()
@@ -73,9 +72,9 @@ public class ResourceManager implements AutoCloseable {
         return descriptorPoolBuff.get(0);
     }
 
-    private long createDescriptorSetLayout(MemoryStack stack) {
+    private long createDescriptorSetLayout(MemoryStack stack, int textureCount) {
         VkDescriptorSetLayoutBinding.Buffer descriptorSetLayoutBindings = VkDescriptorSetLayoutBinding.calloc(1, stack);
-        descriptorSetLayoutBindings.get(0).set(0, VK14.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, this.totalTextures, VK14.VK_SHADER_STAGE_FRAGMENT_BIT, null);
+        descriptorSetLayoutBindings.get(0).set(0, VK14.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, textureCount, VK14.VK_SHADER_STAGE_FRAGMENT_BIT, null);
 
         VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo = VkDescriptorSetLayoutCreateInfo.calloc(stack)
                 .sType$Default()
@@ -123,9 +122,9 @@ public class ResourceManager implements AutoCloseable {
         return samplerBuff.get(0);
     }
 
-    private void uploadTextures(MemoryStack stack, TextureFile[] textureFiles, TtfFile[] ttfFiles) {
+    private void uploadTextures(MemoryStack stack, TextureFile[] textureFiles, TtfFile[] ttfFiles, int textureCount) {
         long imagesUploadedFence = SyncUtils.createFence(stack, false);
-        List<GpuBuffer> stagingBuffersToFree = new ArrayList<>(this.totalTextures);
+        List<GpuBuffer> stagingBuffersToFree = new ArrayList<>(textureCount);
         int textureIndex = 0;
 
         try (CommandPool commandPool = new CommandPool(stack, VulkanManager.getGraphicsQueueIndex(), VK14.VK_COMMAND_POOL_CREATE_TRANSIENT_BIT)) {
@@ -170,7 +169,7 @@ public class ResourceManager implements AutoCloseable {
         stagingBuffersToFree.forEach(GpuBuffer::close);
 
         // Adding regular textures and bitmap font atlas textures to descriptor set
-        VkDescriptorImageInfo.Buffer descriptorImagesInfo = VkDescriptorImageInfo.calloc(this.totalTextures, stack);
+        VkDescriptorImageInfo.Buffer descriptorImagesInfo = VkDescriptorImageInfo.calloc(textureCount, stack);
 
         for (TextureAtlas atlas : this.atlasMap.values()) {
             descriptorImagesInfo.get(atlas.getImageIndex())
@@ -183,7 +182,7 @@ public class ResourceManager implements AutoCloseable {
                 .dstSet(this.descriptorSet)
                 .dstBinding(0)
                 .dstArrayElement(0)
-                .descriptorCount(this.totalTextures)
+                .descriptorCount(textureCount)
                 .descriptorType(VK14.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
                 .pImageInfo(descriptorImagesInfo);
 
@@ -259,10 +258,6 @@ public class ResourceManager implements AutoCloseable {
 
     public long getDescriptorSet() {
         return this.descriptorSet;
-    }
-
-    public int getDescriptorCount() {
-        return this.totalTextures;
     }
 
     @Override

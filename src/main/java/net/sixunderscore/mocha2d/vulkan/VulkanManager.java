@@ -164,7 +164,8 @@ public class VulkanManager {
 
         VkPhysicalDeviceVulkan12Features vulkan12Features = VkPhysicalDeviceVulkan12Features.calloc(stack)
                 .sType$Default()
-                .shaderSampledImageArrayNonUniformIndexing(true);
+                .shaderSampledImageArrayNonUniformIndexing(true)
+                .runtimeDescriptorArray(true);
 
         VkPhysicalDeviceVulkan13Features vulkan13Features = VkPhysicalDeviceVulkan13Features.calloc(stack)
                 .sType$Default()
