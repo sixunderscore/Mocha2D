@@ -42,30 +42,26 @@ public class VulkanManager {
             throw new IllegalStateException("GLFW Vulkan extensions not available");
         }
 
+        VkInstanceCreateInfo instanceCreateInfo = VkInstanceCreateInfo.calloc(stack)
+                .sType$Default()
+                .pApplicationInfo(applicationInfo);
+
         boolean enabledDebugValidation = true;
-        PointerBuffer allExtensions;
         if (enabledDebugValidation) {
-            allExtensions = stack.mallocPointer(glfwExtensions.remaining() + 1)
+            PointerBuffer allExtensions = stack.mallocPointer(glfwExtensions.remaining() + 1)
                     .put(glfwExtensions)
                     .put(stack.UTF8(EXTDebugUtils.VK_EXT_DEBUG_UTILS_EXTENSION_NAME))
                     .flip();
-        } else {
-            allExtensions = stack.mallocPointer(glfwExtensions.remaining())
-                    .put(glfwExtensions)
-                    .flip();
-        }
 
-        VkInstanceCreateInfo instanceCreateInfo = VkInstanceCreateInfo.calloc(stack)
-                .sType$Default()
-                .pApplicationInfo(applicationInfo)
-                .ppEnabledExtensionNames(allExtensions);
-
-        if (enabledDebugValidation) {
             PointerBuffer validationLayers = stack.mallocPointer(1)
                     .put(stack.UTF8("VK_LAYER_KHRONOS_validation"))
                     .flip();
 
-            instanceCreateInfo.ppEnabledLayerNames(validationLayers);
+            instanceCreateInfo
+                    .ppEnabledExtensionNames(allExtensions)
+                    .ppEnabledLayerNames(validationLayers);
+        } else {
+            instanceCreateInfo.ppEnabledExtensionNames(glfwExtensions);
         }
 
         PointerBuffer instancePtr = stack.mallocPointer(1);
