@@ -137,6 +137,10 @@ public class BatchRenderer implements AutoCloseable {
     }
 
     public void addText(BitmapFont bitmapFont, String text, float x, float y, float charScale) {
+        this.addText(bitmapFont, text, x, y, charScale, 0, 0, 0);
+    }
+
+    public void addText(BitmapFont bitmapFont, String text, float x, float y, float charScale, float rotationDegrees, float pivotX, float pivotY) {
         float cursorX = x;
         float cursorY = y;
         int strLength = text.length();
@@ -156,7 +160,16 @@ public class BatchRenderer implements AutoCloseable {
                     GlyphData glyphData = bitmapFont.getGlyphData(c);
                     TextureRegion textureRegion = glyphData.textureRegion();
 
-                    this.addSprite(textureRegion, cursorX, cursorY + glyphData.descent() * charScale, textureRegion.width() * charScale, textureRegion.height() * charScale);
+                    this.addSprite(
+                            textureRegion,
+                            cursorX,
+                            cursorY + glyphData.descent() * charScale,
+                            textureRegion.width() * charScale,
+                            textureRegion.height() * charScale,
+                            rotationDegrees,
+                            pivotX,
+                            pivotY
+                    );
 
                     cursorX += glyphData.advance() * charScale;
                 }
