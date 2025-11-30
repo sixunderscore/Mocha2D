@@ -177,7 +177,7 @@ public class BatchRenderer implements AutoCloseable {
         }
     }
 
-    public void draw(OrthographicCamera camera, SwapChain swapChain, ResourceManager resourceManager, ViewportScissor viewportScissor) {
+    public void draw(PerspectiveCamera camera, SwapChain swapChain, ResourceManager resourceManager, ViewportScissor viewportScissor) {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             long inFlightFence = this.inFlightFences[this.frameInFlightIndex];
 
@@ -195,22 +195,22 @@ public class BatchRenderer implements AutoCloseable {
                     this.imageIndexBuffer
             );
 
-            if (errCode != VK14.VK_SUCCESS && errCode != KHRSwapchain.VK_SUBOPTIMAL_KHR) {
-                return;
-            }
-
-            int imageIndex = this.imageIndexBuffer.get(0);
             FrameResources frameResources = this.frameResources[this.frameInFlightIndex];
 
-            frameResources.recordGraphicsCommands(stack, swapChain, resourceManager, viewportScissor, this.pipeline, imageIndex, this.clearColor, camera);
+            if (errCode == VK14.VK_SUCCESS || errCode == KHRSwapchain.VK_SUBOPTIMAL_KHR) {
+                int imageIndex = this.imageIndexBuffer.get(0);
 
-            long renderFinishedSemaphore = this.renderFinishedSemaphores[imageIndex];
-            frameResources.submitCommandBuffer(stack, imageAvailableSemaphore, renderFinishedSemaphore, inFlightFence);
-            frameResources.presentImageToSwapChain(stack, renderFinishedSemaphore, swapChain, this.imageIndexBuffer);
+                frameResources.recordGraphicsCommands(stack, swapChain, resourceManager, viewportScissor, this.pipeline, imageIndex, this.clearColor, camera);
+
+                long renderFinishedSemaphore = this.renderFinishedSemaphores[imageIndex];
+                frameResources.submitCommandBuffer(stack, imageAvailableSemaphore, renderFinishedSemaphore, inFlightFence);
+                frameResources.presentImageToSwapChain(stack, renderFinishedSemaphore, swapChain, this.imageIndexBuffer);
+
+                this.frameInFlightIndex = ++this.frameInFlightIndex % this.framesInFlight;
+            }
 
             frameResources.resetMappedBuffers();
             this.indexOffset = 0;
-            this.frameInFlightIndex = ++this.frameInFlightIndex % this.framesInFlight;
         }
     }
 
