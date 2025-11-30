@@ -177,7 +177,7 @@ public class BatchRenderer implements AutoCloseable {
         }
     }
 
-    public void draw(PerspectiveCamera camera, SwapChain swapChain, ResourceManager resourceManager, ViewportScissor viewportScissor) {
+    public void draw(OrthographicCamera camera, SwapChain swapChain, ResourceManager resourceManager, ViewportScissor viewportScissor) {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             long inFlightFence = this.inFlightFences[this.frameInFlightIndex];
 
