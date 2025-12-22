@@ -69,7 +69,7 @@ public class BatchRenderer implements AutoCloseable {
         this.addSprite(texture, x, y, width, height, 0, 0, 0);
     }
 
-    public void addSprite(TextureRegion texture, float x, float y, float width, float height, float rotationDegrees, float pivotX, float pivotY) {
+    public void addSprite(TextureRegion texture, float x, float y, float width, float height, float rotationRadians, float pivotX, float pivotY) {
         FrameResources frameResources = this.frameResources[this.frameInFlightIndex];
         ShortBuffer mappedIndexBuffer = frameResources.getMappedIndexBuffer();
         FloatBuffer mappedVertexBuffer = frameResources.getMappedVertexBuffer();
@@ -101,8 +101,7 @@ public class BatchRenderer implements AutoCloseable {
         // Rotation data
         float rotationSin = 0;
         float rotationCos = 1f;
-        if (Math.abs(rotationDegrees) > 0.001f) {
-            float rotationRadians = (float) Math.toRadians(rotationDegrees);
+        if (Math.abs(rotationRadians) > 0.001f) {
             rotationSin = org.joml.Math.sin(rotationRadians);
             rotationCos = org.joml.Math.cos(rotationRadians);
         }

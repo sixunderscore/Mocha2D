@@ -44,7 +44,7 @@ public class SampleScreen implements Screen {
 
         float spinningDegrees = org.joml.Math.lerp(0, 360f, this.t);
 
-        batch.addSprite(this.logoTexture, Window.getWidth() / 2f - 150, Window.getHeight() / 2f - 150, 300, 300, spinningDegrees, Window.getWidth() / 2f, Window.getHeight() / 2f);
+        batch.addSprite(this.logoTexture, Window.getWidth() / 2f - 150, Window.getHeight() / 2f - 150, 300, 300, (float) Math.toRadians(spinningDegrees), Window.getWidth() / 2f, Window.getHeight() / 2f);
         batch.addText(this.bitmapFont, "FPS: " + Window.getFpsCount(), 10, Window.getHeight() - 50, 1.1f);
     }
 }
