@@ -2,7 +2,6 @@ package net.sixunderscore.mocha2d.graphics.resources.textures;
 
 import net.sixunderscore.mocha2d.vulkan.util.GpuBuffer;
 import net.sixunderscore.mocha2d.vulkan.VulkanManager;
-import org.joml.Vector2f;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.util.vma.Vma;
@@ -124,19 +123,32 @@ public class TextureAtlas implements AutoCloseable {
     }
 
     public TextureRegion getFull() {
-        UVs uVs = new UVs(new Vector2f(0.0f, 1.0f), new Vector2f(1.0f, 1.0f), new Vector2f(0.0f, 0.0f), new Vector2f(1.0f, 0.0f));
-
-        return new TextureRegion(this.imageIndex, this.width, this.height, uVs);
+        return new TextureRegion(
+                this.imageIndex,
+                this.width,
+                this.height,
+                0.0f, 1.0f,
+                1.0f, 1.0f,
+                0.0f, 0.0f,
+                1.0f, 0.0f
+        );
     }
 
     public TextureRegion getRegion(int startX, int endX, int startY, int endY) {
-        float u0 = (float) startX / (float) this.width;  // Left
-        float v0 = (float) startY / (float) this.height; // Top
-        float u1 = (float) endX / (float) this.width;    // Right
-        float v1 = (float) endY / (float) this.height;   // Bottom
-        UVs uVs = new UVs(new Vector2f(u0, v1), new Vector2f(u1, v1), new Vector2f(u0, v0), new Vector2f(u1, v0));
+        float u0 = (float) startX / (float) this.width;
+        float v0 = (float) startY / (float) this.height;
+        float u1 = (float) endX / (float) this.width;
+        float v1 = (float) endY / (float) this.height;
 
-        return new TextureRegion(this.imageIndex, endX - startX, endY - startY, uVs);
+        return new TextureRegion(
+                this.imageIndex,
+                endX - startX,
+                endY - startY,
+                u0, v1,
+                u1, v1,
+                u0, v0,
+                u1, v0
+        );
     }
 
     @Override

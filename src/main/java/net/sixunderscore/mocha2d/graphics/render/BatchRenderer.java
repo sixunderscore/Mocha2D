@@ -4,12 +4,10 @@ import net.sixunderscore.mocha2d.graphics.resources.ResourceManager;
 import net.sixunderscore.mocha2d.graphics.resources.text.BitmapFont;
 import net.sixunderscore.mocha2d.graphics.resources.text.GlyphData;
 import net.sixunderscore.mocha2d.graphics.resources.textures.TextureRegion;
-import net.sixunderscore.mocha2d.graphics.resources.textures.UVs;
 import net.sixunderscore.mocha2d.util.Color;
 import net.sixunderscore.mocha2d.vulkan.util.*;
 import net.sixunderscore.mocha2d.vulkan.VulkanManager;
 import net.sixunderscore.mocha2d.util.OrthographicCamera;
-import org.joml.Vector2f;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.vulkan.*;
@@ -54,7 +52,7 @@ public class BatchRenderer implements AutoCloseable {
                 this.inFlightFences[i] = SyncUtils.createFence(stack, true);
             }
 
-            this.pipeline = new GraphicsPipeline(stack, resourceManager, swapChain, "assets/shaders/vertex.spv", "assets/shaders/fragment.spv");
+            this.pipeline = new GraphicsPipeline(stack, resourceManager, swapChain, "shaders/vertex.spv", "shaders/fragment.spv");
         }
 
         this.imageIndexBuffer = MemoryUtil.memAllocInt(1);
@@ -89,13 +87,6 @@ public class BatchRenderer implements AutoCloseable {
 
         // ---- Writing vertex data for quad ----
 
-        // UV data
-        UVs uvCoordinates = texture.uvCoordinates();
-        Vector2f topLeft = uvCoordinates.topLeft();
-        Vector2f topRight = uvCoordinates.topRight();
-        Vector2f bottomLeft = uvCoordinates.bottomLeft();
-        Vector2f bottomRight = uvCoordinates.bottomRight();
-
         int index = texture.imageIndex();
 
         // Rotation data
@@ -108,28 +99,28 @@ public class BatchRenderer implements AutoCloseable {
 
         mappedVertexBuffer
                 .put(x).put(y)
-                .put(topLeft.x).put(topLeft.y)
+                .put(texture.topLeftU()).put(texture.topLeftV())
                 .put(index)
                 .put(rotationSin).put(rotationCos)
                 .put(pivotX).put(pivotY);
 
         mappedVertexBuffer
                 .put(x + width).put(y)
-                .put(topRight.x).put(topRight.y)
+                .put(texture.topRightU()).put(texture.topRightV())
                 .put(index)
                 .put(rotationSin).put(rotationCos)
                 .put(pivotX).put(pivotY);
 
         mappedVertexBuffer
                 .put(x).put(y + height)
-                .put(bottomLeft.x).put(bottomLeft.y)
+                .put(texture.bottomLeftU()).put(texture.bottomLeftV())
                 .put(index)
                 .put(rotationSin).put(rotationCos)
                 .put(pivotX).put(pivotY);
 
         mappedVertexBuffer
                 .put(x + width).put(y + height)
-                .put(bottomRight.x).put(bottomRight.y)
+                .put(texture.bottomRightU()).put(texture.bottomRightV())
                 .put(index)
                 .put(rotationSin).put(rotationCos)
                 .put(pivotX).put(pivotY);
