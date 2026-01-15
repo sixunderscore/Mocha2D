@@ -101,15 +101,39 @@ public class VulkanManager {
 
             int deviceType = properties.deviceType();
 
-            if (deviceType == VK14.VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
-                dedicatedGpu = device;
-                break;
-            } else if (deviceType == VK14.VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU) {
-                integratedGpu = device;
+            if (gpuSupportsSwapChain(stack, device)) {
+                if (deviceType == VK14.VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
+                    dedicatedGpu = device;
+                    break;
+                } else if (deviceType == VK14.VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU) {
+                    integratedGpu = device;
+                }
             }
         }
 
-        return dedicatedGpu != null ? dedicatedGpu : integratedGpu;
+        if (dedicatedGpu != null) {
+            return dedicatedGpu;
+        } else if (integratedGpu != null) {
+            return integratedGpu;
+        }
+
+        throw new IllegalStateException("No SwapChain-Supporting GPU found");
+    }
+
+    private static boolean gpuSupportsSwapChain(MemoryStack stack, VkPhysicalDevice physicalDevice) {
+        IntBuffer extensionsCountBuff = stack.mallocInt(1);
+        VK14.vkEnumerateDeviceExtensionProperties(physicalDevice, (ByteBuffer) null, extensionsCountBuff, null);
+
+        VkExtensionProperties.Buffer availableExtensions = VkExtensionProperties.calloc(extensionsCountBuff.get(0), stack);
+        VK14.vkEnumerateDeviceExtensionProperties(physicalDevice, (ByteBuffer) null, extensionsCountBuff, availableExtensions);
+
+        for (VkExtensionProperties extensionProperties : availableExtensions) {
+            if (extensionProperties.extensionNameString().equals(KHRSwapchain.VK_KHR_SWAPCHAIN_EXTENSION_NAME)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static int findGraphicsQueueFamilyIndex(MemoryStack stack, VkPhysicalDevice physicalDevice) {
@@ -118,7 +142,7 @@ public class VulkanManager {
         int queueFamilyCount = queueFamilyCountBuff.get(0);
 
         if (queueFamilyCount == 0) {
-            throw new RuntimeException("No queue families found");
+            throw new IllegalStateException("No queue families found");
         }
 
         VkQueueFamilyProperties.Buffer familyPropertiesBuffer = VkQueueFamilyProperties.calloc(queueFamilyCount, stack);
@@ -148,10 +172,6 @@ public class VulkanManager {
     }
 
     private static VkDevice createLogicalDevice(MemoryStack stack, VkPhysicalDevice physicalDevice) {
-        if (!gpuSupportsSwapChain(stack, physicalDevice)) {
-            throw new IllegalStateException("Selected GPU doesn't support SwapChain");
-        }
-
         VkDeviceQueueCreateInfo.Buffer deviceQueueCreateInfos = VkDeviceQueueCreateInfo.calloc(1, stack);
         deviceQueueCreateInfos.get(0)
                 .sType$Default()
@@ -185,22 +205,6 @@ public class VulkanManager {
         }
 
         return new VkDevice(devicePtr.get(0), physicalDevice, deviceCreateInfo);
-    }
-
-    private static boolean gpuSupportsSwapChain(MemoryStack stack, VkPhysicalDevice physicalDevice) {
-        IntBuffer extensionsCountBuff = stack.mallocInt(1);
-        VK14.vkEnumerateDeviceExtensionProperties(physicalDevice, (ByteBuffer) null, extensionsCountBuff, null);
-
-        VkExtensionProperties.Buffer availableExtensions = VkExtensionProperties.calloc(extensionsCountBuff.get(0), stack);
-        VK14.vkEnumerateDeviceExtensionProperties(physicalDevice, (ByteBuffer) null, extensionsCountBuff, availableExtensions);
-
-        for (VkExtensionProperties extensionProperties : availableExtensions) {
-            if (extensionProperties.extensionNameString().equals(KHRSwapchain.VK_KHR_SWAPCHAIN_EXTENSION_NAME)) {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     private static long createVmaAllocator(MemoryStack stack, VkPhysicalDevice physicalDevice) {
