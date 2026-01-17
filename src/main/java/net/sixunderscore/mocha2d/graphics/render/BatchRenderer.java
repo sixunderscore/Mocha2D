@@ -68,6 +68,66 @@ public class BatchRenderer implements AutoCloseable {
     }
 
     public void addSprite(TextureRegion texture, float x, float y, float width, float height, float rotationRadians, float pivotX, float pivotY) {
+        float rotationSin = 0;
+        float rotationCos = 1f;
+        if (Math.abs(rotationRadians) > 0.001f) {
+            rotationSin = org.joml.Math.sin(rotationRadians);
+            rotationCos = org.joml.Math.cos(rotationRadians);
+        }
+
+        this.addQuad(texture, x, y, width, height, rotationSin, rotationCos, pivotX, pivotY);
+    }
+
+    public void addText(BitmapFont bitmapFont, String text, float x, float y, float charScale) {
+        this.addText(bitmapFont, text, x, y, charScale, 0, 0, 0);
+    }
+
+    public void addText(BitmapFont bitmapFont, String text, float x, float y, float charScale, float rotationRadians, float pivotX, float pivotY) {
+        float cursorX = x;
+        float cursorY = y;
+        int strLength = text.length();
+        int charResolution = bitmapFont.getCharResolution();
+        float rotationSin = 0;
+        float rotationCos = 1f;
+
+        if (Math.abs(rotationRadians) > 0.001f) {
+            rotationSin = org.joml.Math.sin(rotationRadians);
+            rotationCos = org.joml.Math.cos(rotationRadians);
+        }
+
+        for (int i = 0; i < strLength; ++i) {
+            char c = text.charAt(i);
+
+            switch (c) {
+                case ' ' -> cursorX += (charResolution * charScale) / 2.5f;
+                case '\t' -> cursorX += (charResolution * charScale) * 1.5f;
+                case '\n' -> {
+                    cursorX = x;
+                    cursorY -= charResolution * charScale;
+                }
+                default -> {
+                    GlyphData glyphData = bitmapFont.getGlyphData(c);
+                    TextureRegion texture = glyphData.textureRegion();
+
+                    this.addQuad(
+                            texture,
+                            cursorX,
+                            cursorY + glyphData.descent() * charScale,
+                            texture.width() * charScale,
+                            texture.height() * charScale,
+                            rotationSin,
+                            rotationCos,
+                            pivotX,
+                            pivotY
+                    );
+
+                    cursorX += glyphData.advance() * charScale;
+                }
+            }
+        }
+    }
+
+    private void addQuad(TextureRegion texture, float x, float y, float width, float height, float rotationSin, float rotationCos, float pivotX, float pivotY) {
         FrameResources frameResources = this.frameResources[this.frameInFlightIndex];
         ShortBuffer mappedIndexBuffer = frameResources.getMappedIndexBuffer();
         FloatBuffer mappedVertexBuffer = frameResources.getMappedVertexBuffer();
@@ -88,14 +148,6 @@ public class BatchRenderer implements AutoCloseable {
         // ---- Writing vertex data for quad ----
 
         int index = texture.imageIndex();
-
-        // Rotation data
-        float rotationSin = 0;
-        float rotationCos = 1f;
-        if (Math.abs(rotationRadians) > 0.001f) {
-            rotationSin = org.joml.Math.sin(rotationRadians);
-            rotationCos = org.joml.Math.cos(rotationRadians);
-        }
 
         mappedVertexBuffer
                 .put(x).put(y)
@@ -124,47 +176,6 @@ public class BatchRenderer implements AutoCloseable {
                 .put(index)
                 .put(rotationSin).put(rotationCos)
                 .put(pivotX).put(pivotY);
-    }
-
-    public void addText(BitmapFont bitmapFont, String text, float x, float y, float charScale) {
-        this.addText(bitmapFont, text, x, y, charScale, 0, 0, 0);
-    }
-
-    public void addText(BitmapFont bitmapFont, String text, float x, float y, float charScale, float rotationRadians, float pivotX, float pivotY) {
-        float cursorX = x;
-        float cursorY = y;
-        int strLength = text.length();
-        int charResolution = bitmapFont.getCharResolution();
-
-        for (int i = 0; i < strLength; ++i) {
-            char c = text.charAt(i);
-
-            switch (c) {
-                case ' ' -> cursorX += (charResolution * charScale) / 2.5f;
-                case '\t' -> cursorX += (charResolution * charScale) * 1.5f;
-                case '\n' -> {
-                    cursorX = x;
-                    cursorY -= charResolution * charScale;
-                }
-                default -> {
-                    GlyphData glyphData = bitmapFont.getGlyphData(c);
-                    TextureRegion texture = glyphData.textureRegion();
-
-                    this.addSprite(
-                            texture,
-                            cursorX,
-                            cursorY + glyphData.descent() * charScale,
-                            texture.width() * charScale,
-                            texture.height() * charScale,
-                            rotationRadians,
-                            pivotX,
-                            pivotY
-                    );
-
-                    cursorX += glyphData.advance() * charScale;
-                }
-            }
-        }
     }
 
     public void draw(OrthographicCamera camera, SwapChain swapChain, ResourceManager resourceManager, ViewportScissor viewportScissor) {
