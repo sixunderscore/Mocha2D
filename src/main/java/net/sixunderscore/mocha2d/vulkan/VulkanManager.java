@@ -42,40 +42,44 @@ public class VulkanManager {
             throw new IllegalStateException("GLFW Vulkan extensions not available");
         }
 
+        // #start-debug
+        PointerBuffer allExtensions = stack.mallocPointer(glfwExtensions.remaining() + 1)
+                .put(glfwExtensions)
+                .put(stack.UTF8(EXTDebugUtils.VK_EXT_DEBUG_UTILS_EXTENSION_NAME))
+                .flip();
+
+        PointerBuffer validationLayers = stack.mallocPointer(1)
+                .put(stack.UTF8("VK_LAYER_KHRONOS_validation"))
+                .flip();
+
         VkInstanceCreateInfo instanceCreateInfo = VkInstanceCreateInfo.calloc(stack)
                 .sType$Default()
-                .pApplicationInfo(applicationInfo);
+                .pApplicationInfo(applicationInfo)
+                .ppEnabledExtensionNames(allExtensions)
+                .ppEnabledLayerNames(validationLayers);
+        // #end-debug
 
-        boolean enabledDebugValidation = true;
-        if (enabledDebugValidation) {
-            PointerBuffer allExtensions = stack.mallocPointer(glfwExtensions.remaining() + 1)
-                    .put(glfwExtensions)
-                    .put(stack.UTF8(EXTDebugUtils.VK_EXT_DEBUG_UTILS_EXTENSION_NAME))
-                    .flip();
-
-            PointerBuffer validationLayers = stack.mallocPointer(1)
-                    .put(stack.UTF8("VK_LAYER_KHRONOS_validation"))
-                    .flip();
-
-            instanceCreateInfo
-                    .ppEnabledExtensionNames(allExtensions)
-                    .ppEnabledLayerNames(validationLayers);
-        } else {
-            instanceCreateInfo.ppEnabledExtensionNames(glfwExtensions);
-        }
+        /* #start-release
+        VkInstanceCreateInfo instanceCreateInfo = VkInstanceCreateInfo.calloc(stack)
+                .sType$Default()
+                .pApplicationInfo(applicationInfo)
+                .ppEnabledExtensionNames(glfwExtensions);
+         #end-release */
 
         PointerBuffer instancePtr = stack.mallocPointer(1);
         if (VK14.vkCreateInstance(instanceCreateInfo, null, instancePtr) != VK14.VK_SUCCESS) {
             throw new IllegalStateException("Failed to create Vulkan Instance");
         }
 
+        // #start-debug
         VkInstance instance = new VkInstance(instancePtr.get(0), instanceCreateInfo);
-
-        if (enabledDebugValidation) {
-            VulkanErrorHandling.createDebugMessenger(stack, instance);
-        }
-
+        VulkanErrorHandling.createDebugMessenger(stack, instance);
         return instance;
+        // #end-debug
+
+        /* #start-release
+        return new VkInstance(instancePtr.get(0), instanceCreateInfo);
+        #end-release */
     }
 
     private static VkPhysicalDevice pickPhysicalDevice(MemoryStack stack) {
@@ -250,7 +254,9 @@ public class VulkanManager {
     }
 
     public static void cleanUp() {
+        // #start-debug
         VulkanErrorHandling.cleanUp();
+        // #end-debug
 
         Vma.nvmaDestroyAllocator(allocator);
         VK14.vkDestroyDevice(logicalDevice, null);
