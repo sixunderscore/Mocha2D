@@ -258,7 +258,7 @@ public class VulkanManager {
         VulkanErrorHandling.cleanUp();
         // #end-debug
 
-        Vma.nvmaDestroyAllocator(allocator);
+        Vma.vmaDestroyAllocator(allocator);
         VK14.vkDestroyDevice(logicalDevice, null);
         VK14.vkDestroyInstance(instance, null);
     }
