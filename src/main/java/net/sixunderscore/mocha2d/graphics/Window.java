@@ -1,11 +1,10 @@
-package net.sixunderscore.mocha2d;
+package net.sixunderscore.mocha2d.graphics;
 
 import net.sixunderscore.mocha2d.graphics.render.BatchRenderer;
 import net.sixunderscore.mocha2d.graphics.resources.textures.TextureData;
 import net.sixunderscore.mocha2d.graphics.resources.ResourceManager;
 import net.sixunderscore.mocha2d.util.*;
 import net.sixunderscore.mocha2d.util.FpsHelper;
-import net.sixunderscore.mocha2d.util.Screen;
 import net.sixunderscore.mocha2d.vulkan.VulkanManager;
 import net.sixunderscore.mocha2d.vulkan.util.SwapChain;
 import net.sixunderscore.mocha2d.vulkan.util.ViewportScissor;
@@ -71,6 +70,7 @@ public class Window {
             width = newWidth;
             height = newHeight;
             camera.adjustProjection();
+            screen.onWindowResized(width, height);
             shouldRebuildSwapChain = true;
         });
 

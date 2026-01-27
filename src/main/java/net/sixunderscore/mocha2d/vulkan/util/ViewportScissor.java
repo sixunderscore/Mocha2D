@@ -1,6 +1,6 @@
 package net.sixunderscore.mocha2d.vulkan.util;
 
-import net.sixunderscore.mocha2d.Window;
+import net.sixunderscore.mocha2d.graphics.Window;
 import org.lwjgl.vulkan.VkExtent2D;
 import org.lwjgl.vulkan.VkOffset2D;
 import org.lwjgl.vulkan.VkRect2D;

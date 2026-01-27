@@ -1,6 +1,7 @@
 package net.sixunderscore.mocha2d;
 
 import net.sixunderscore.mocha2d.enginesamples.SampleScreen;
+import net.sixunderscore.mocha2d.graphics.Window;
 import net.sixunderscore.mocha2d.graphics.resources.text.BitmapFontResolution;
 import net.sixunderscore.mocha2d.util.Color;
 import net.sixunderscore.mocha2d.graphics.resources.TextureFile;

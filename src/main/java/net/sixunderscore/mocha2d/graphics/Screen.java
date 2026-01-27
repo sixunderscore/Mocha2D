@@ -1,4 +1,4 @@
-package net.sixunderscore.mocha2d.util;
+package net.sixunderscore.mocha2d.graphics;
 
 import net.sixunderscore.mocha2d.graphics.render.BatchRenderer;
 import net.sixunderscore.mocha2d.graphics.resources.ResourceManager;
@@ -10,6 +10,7 @@ public interface Screen {
     default void onMouseScrolled(double xOffset, double yOffset) {}
     default void onKeyPressed(int keycode, int scancode, int action, int mods) {}
     default void onCharTyped(int codepoint) {}
+    default void onWindowResized(int newWidth, int newHeight) {}
     void render(BatchRenderer batch);
     default void cleanUp() {}
 }

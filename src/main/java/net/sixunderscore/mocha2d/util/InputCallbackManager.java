@@ -1,5 +1,6 @@
 package net.sixunderscore.mocha2d.util;
 
+import net.sixunderscore.mocha2d.graphics.Screen;
 import org.lwjgl.glfw.*;
 
 public class InputCallbackManager {
