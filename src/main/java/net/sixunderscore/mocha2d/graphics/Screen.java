@@ -10,7 +10,7 @@ public interface Screen {
     default void onMouseScrolled(double xOffset, double yOffset) {}
     default void onKeyPressed(int keycode, int scancode, int action, int mods) {}
     default void onCharTyped(int codepoint) {}
-    default void onWindowResized(int newWidth, int newHeight) {}
+    default void onWindowResized() {}
     void render(BatchRenderer batch);
     default void cleanUp() {}
 }

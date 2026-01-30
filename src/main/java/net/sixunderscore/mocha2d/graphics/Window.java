@@ -70,7 +70,7 @@ public class Window {
             width = newWidth;
             height = newHeight;
             camera.adjustProjection();
-            screen.onWindowResized(width, height);
+            screen.onWindowResized();
             shouldRebuildSwapChain = true;
         });
 
