@@ -1,6 +1,7 @@
 package net.sixunderscore.mocha2d.util;
 
 import net.sixunderscore.mocha2d.graphics.Screen;
+import net.sixunderscore.mocha2d.graphics.Window;
 import org.lwjgl.glfw.*;
 
 public class InputCallbackManager {
@@ -18,7 +19,10 @@ public class InputCallbackManager {
         this.cleanUp();
 
         // Mouse
-        this.cursorPosCallback = GLFW.glfwSetCursorPosCallback(window, (window2, xPos, yPos) -> screen.onMouseMoved(xPos, yPos));
+        this.cursorPosCallback = GLFW.glfwSetCursorPosCallback(window, (window2, xPos, yPos) -> {
+            float flippedY = (float) (Window.getHeight() - yPos);
+            screen.onMouseMoved(xPos, flippedY);
+        });
         this.mouseButtonCallback = GLFW.glfwSetMouseButtonCallback(window, (window2, button, action, mods) -> screen.onMouseClicked(button, action, mods));
         this.scrollCallback = GLFW.glfwSetScrollCallback(window, (window2, xOffset, yOffset) -> screen.onMouseScrolled(xOffset, yOffset));
 
