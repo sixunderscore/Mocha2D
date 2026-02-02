@@ -3,6 +3,7 @@ package net.sixunderscore.mocha2d.enginesamples;
 import net.sixunderscore.mocha2d.graphics.Screen;
 import net.sixunderscore.mocha2d.graphics.Window;
 import net.sixunderscore.mocha2d.graphics.render.BatchRenderer;
+import net.sixunderscore.mocha2d.graphics.resources.ResourceManager;
 import net.sixunderscore.mocha2d.graphics.resources.text.BitmapFont;
 import net.sixunderscore.mocha2d.graphics.resources.textures.TextureRegion;
 import org.lwjgl.glfw.GLFW;
@@ -14,9 +15,9 @@ public class SampleScreen implements Screen {
     private float rotationScalar;
 
     @Override
-    public void init() {
-        this.logoTexture = Window.getResourceManager().getFullTexture("logo");
-        this.bitmapFont = Window.getResourceManager().getBitmapFont("roboto");
+    public void init(ResourceManager resourceManager) {
+        this.logoTexture = resourceManager.getFullTexture("logo");
+        this.bitmapFont = resourceManager.getBitmapFont("roboto");
 
         this.t = 0;
         this.rotationScalar = 0.6f;
