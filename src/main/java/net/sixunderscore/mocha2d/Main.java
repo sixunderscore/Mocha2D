@@ -17,6 +17,7 @@ public class Main {
         windowSettings.setTtfFiles(
                 new TtfFile("sample_assets/fonts/Roboto-Regular.ttf", BitmapFontResolution.NORMAL, new Color((byte) 255, (byte) 255, (byte) 255), "roboto")
         );
-        Window.start(windowSettings, new SampleScreen());
+        Window.init(windowSettings, new SampleScreen());
+        Window.start();
     }
 }
