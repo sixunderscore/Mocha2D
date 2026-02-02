@@ -1,9 +1,10 @@
 package net.sixunderscore.mocha2d.graphics;
 
 import net.sixunderscore.mocha2d.graphics.render.BatchRenderer;
+import net.sixunderscore.mocha2d.graphics.resources.ResourceManager;
 
 public interface Screen {
-    void init();
+    void init(ResourceManager resourceManager);
     default void onMouseMoved(double xPos, double yPos) {}
     default void onMouseClicked(int button, int action, int mods) {}
     default void onMouseScrolled(double xOffset, double yOffset) {}

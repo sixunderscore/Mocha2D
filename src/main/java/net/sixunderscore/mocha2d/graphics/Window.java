@@ -29,7 +29,13 @@ public class Window {
     private static FpsHelper fpsHelper;
     private static DeltaTime deltaTime;
 
-    public static void init(WindowSettings settings, Screen initialScreen) {
+    public static void start(WindowSettings settings, Screen initialScreen) {
+        init(settings, initialScreen);
+        loop();
+        cleanUp();
+    }
+
+    private static void init(WindowSettings settings, Screen initialScreen) {
         System.setProperty("joml.fastmath", "true");
         System.setProperty("joml.sinLookup", "true");
 
@@ -80,7 +86,7 @@ public class Window {
         resourceManager = new ResourceManager(settings.getTextureFiles(), settings.getTtfFiles());
 
         screen = initialScreen;
-        screen.init();
+        screen.init(resourceManager);
         inputCallbackManager = new InputCallbackManager(window, screen);
         camera = new OrthographicCamera();
         batch = new BatchRenderer(resourceManager, swapChain, settings.getClearColor());
@@ -88,7 +94,7 @@ public class Window {
         deltaTime = new DeltaTime();
     }
 
-    public static void start() {
+    private static void loop() {
         while (!GLFW.glfwWindowShouldClose(window)) {
             if (shouldRebuildSwapChain) {
                 viewportScissor.update();
@@ -106,8 +112,6 @@ public class Window {
 
             fpsHelper.cap();
         }
-
-        cleanUp();
     }
 
     private static void setWindowIcon(String path) {
@@ -123,6 +127,7 @@ public class Window {
 
     public static void setScreen(Screen newScreen) {
         screen.cleanUp();
+        screen.init(resourceManager);
         screen = newScreen;
         inputCallbackManager.setCallbacks(window, screen);
     }
@@ -145,10 +150,6 @@ public class Window {
 
     public static int getFpsCount() {
         return fpsHelper.getCount();
-    }
-
-    public static ResourceManager getResourceManager() {
-        return resourceManager;
     }
 
     private static void cleanUp() {
