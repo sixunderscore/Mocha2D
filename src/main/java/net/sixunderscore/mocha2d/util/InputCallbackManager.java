@@ -20,7 +20,11 @@ public class InputCallbackManager {
 
         // Mouse
         // We flip cursor y coordinate
-        this.cursorPosCallback = GLFW.glfwSetCursorPosCallback(window, (window2, xPos, yPos) -> screen.onMouseMoved(xPos, (Window.getHeight() - yPos)));
+        this.cursorPosCallback = GLFW.glfwSetCursorPosCallback(window, (window2, xPos, yPos) -> {
+            double fbX = xPos * Window.getXScale();
+            double fbY = yPos * Window.getYScale();
+            screen.onMouseMoved(fbX, (Window.getHeight() - fbY));
+        });
         this.mouseButtonCallback = GLFW.glfwSetMouseButtonCallback(window, (window2, button, action, mods) -> screen.onMouseClicked(button, action, mods));
         this.scrollCallback = GLFW.glfwSetScrollCallback(window, (window2, xOffset, yOffset) -> screen.onMouseScrolled(xOffset, yOffset));
 

@@ -17,6 +17,8 @@ public class Window {
     private static long window;
     private static int width;
     private static int height;
+    private static float xScale;
+    private static float yScale;
     private static long surface;
     private static ViewportScissor viewportScissor;
     private static SwapChain swapChain;
@@ -60,11 +62,11 @@ public class Window {
             throw new IllegalStateException("Failed to create Window");
         }
 
-        int[] fbWidth = new int[1];
-        int[] fbHeight = new int[1];
-        GLFW.glfwGetFramebufferSize(window, fbWidth, fbHeight);
-        width = fbWidth[0];
-        height = fbHeight[0];
+        int[] widthArr = new int[1];
+        int[] heightArr = new int[1];
+        GLFW.glfwGetFramebufferSize(window, widthArr, heightArr);
+        width = widthArr[0];
+        height = heightArr[0];
 
         GLFW.glfwSetFramebufferSizeCallback(window, (window, newWidth, newHeight) -> {
             width = newWidth;
@@ -72,6 +74,17 @@ public class Window {
             camera.adjustProjection();
             screen.onWindowResized();
             shouldRebuildSwapChain = true;
+        });
+
+        float[] xScaleArr = new float[1];
+        float[] yScaleArr = new float[1];
+        GLFW.glfwGetWindowContentScale(window, xScaleArr, yScaleArr);
+        xScale = xScaleArr[0];
+        yScale = xScaleArr[0];
+
+        GLFW.glfwSetWindowContentScaleCallback(window, (window, newXScale, newYScale) -> {
+            xScale = newXScale;
+            yScale = newYScale;
         });
 
         setWindowIcon(settings.getWindowIconPath());
@@ -142,6 +155,14 @@ public class Window {
 
     public static int getHeight() {
         return height;
+    }
+
+    public static float getXScale() {
+        return xScale;
+    }
+
+    public static float getYScale() {
+        return yScale;
     }
 
     public static float getDeltaTime() {
