@@ -49,6 +49,26 @@ public class BitmapFont {
         return index >= 0 && index < TextData.NUM_CHARS ? this.glyphDataArr[index] : this.glyphDataArr['?' - TextData.FIRST_CHAR];
     }
 
+    public float getTextWidth(String text, float charScale) {
+        int strLength = text.length();
+        float cursor = 0;
+
+        for (int i = 0; i < strLength; ++i) {
+            char c = text.charAt(i);
+
+            switch (c) {
+                case ' ' -> cursor += (this.charResolution * charScale) / 2.5f;
+                case '\t' -> cursor += (this.charResolution * charScale) * 1.5f;
+                case '\n' -> {
+                    return cursor;
+                }
+                default -> cursor += this.getGlyphData(c).advance() * charScale;
+            }
+        }
+
+        return cursor;
+    }
+
     public int getCharResolution() {
         return this.charResolution;
     }
