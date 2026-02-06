@@ -46,9 +46,10 @@ public class MathUtils {
         float r = (((-0.0464964749f * s + 0.15931422f) * s - 0.327622764f) * s * a + a);
 
         if (ay > ax) {
-            return PI_OVER_2 - r;
-        } else if (x < 0) {
-            return PI_f - r;
+            r = PI_OVER_2 - r;
+        }
+        if (x < 0) {
+            r = PI_f - r;
         }
 
         return y < 0 ? -r : r;
