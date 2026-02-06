@@ -5,6 +5,7 @@ import net.sixunderscore.mocha2d.graphics.resources.text.BitmapFont;
 import net.sixunderscore.mocha2d.graphics.resources.text.GlyphData;
 import net.sixunderscore.mocha2d.graphics.resources.textures.TextureRegion;
 import net.sixunderscore.mocha2d.util.Color;
+import net.sixunderscore.mocha2d.util.MathUtils;
 import net.sixunderscore.mocha2d.vulkan.util.*;
 import net.sixunderscore.mocha2d.vulkan.VulkanManager;
 import net.sixunderscore.mocha2d.util.OrthographicCamera;
@@ -71,8 +72,8 @@ public class BatchRenderer implements AutoCloseable {
         float rotationSin = 0;
         float rotationCos = 1f;
         if (Math.abs(rotationRadians) > 0.001f) {
-            rotationSin = org.joml.Math.sin(rotationRadians);
-            rotationCos = org.joml.Math.cos(rotationRadians);
+            rotationSin = MathUtils.lookupSin(rotationRadians);
+            rotationCos = MathUtils.lookupCos(rotationRadians);
         }
 
         this.addQuad(texture, x, y, width, height, rotationSin, rotationCos, pivotX, pivotY);
@@ -91,8 +92,8 @@ public class BatchRenderer implements AutoCloseable {
         float rotationCos = 1f;
 
         if (Math.abs(rotationRadians) > 0.001f) {
-            rotationSin = org.joml.Math.sin(rotationRadians);
-            rotationCos = org.joml.Math.cos(rotationRadians);
+            rotationSin = MathUtils.lookupSin(rotationRadians);
+            rotationCos = MathUtils.lookupCos(rotationRadians);
         }
 
         for (int i = 0; i < strLength; ++i) {

@@ -6,6 +6,7 @@ import net.sixunderscore.mocha2d.graphics.render.BatchRenderer;
 import net.sixunderscore.mocha2d.graphics.resources.ResourceManager;
 import net.sixunderscore.mocha2d.graphics.resources.text.BitmapFont;
 import net.sixunderscore.mocha2d.graphics.resources.textures.TextureRegion;
+import net.sixunderscore.mocha2d.util.MathUtils;
 import org.lwjgl.glfw.GLFW;
 
 public class SampleScreen implements Screen {
@@ -42,9 +43,7 @@ public class SampleScreen implements Screen {
             this.t += Window.getDeltaTime() * this.rotationScalar;
         }
 
-        float spinningDegrees = org.joml.Math.lerp(0, 360f, this.t);
-
-        batch.addSprite(this.logoTexture, Window.getWidth() / 2f - 150, Window.getHeight() / 2f - 150, 300, 300, (float) Math.toRadians(spinningDegrees), Window.getWidth() / 2f, Window.getHeight() / 2f);
+        batch.addSprite(this.logoTexture, Window.getWidth() / 2f - 150, Window.getHeight() / 2f - 150, 300, 300, MathUtils.lerp(0, MathUtils.PI_TIMES_2, this.t), Window.getWidth() / 2f, Window.getHeight() / 2f);
         batch.addText(this.bitmapFont, "FPS: " + Window.getFpsCount(), 10, Window.getHeight() - 50, 1.1f);
     }
 }
