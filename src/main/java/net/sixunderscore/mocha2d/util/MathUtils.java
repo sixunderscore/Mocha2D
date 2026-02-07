@@ -15,7 +15,7 @@ public class MathUtils {
         float step = PI_TIMES_2 / TABLE_SIZE;
         float theta = 0;
 
-        for (int i = 0; i < TABLE_SIZE; i++) {
+        for (int i = 0; i < TABLE_SIZE; ++i) {
             table[i] = (float) Math.sin(theta);
             theta += step;
         }
