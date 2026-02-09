@@ -43,7 +43,7 @@ public class SampleScreen implements Screen {
             this.t += Window.getDeltaTime() * this.rotationScalar;
         }
 
-        batch.addSprite(this.logoTexture, Window.getWidth() / 2f - 150, Window.getHeight() / 2f - 150, 300, 300, MathUtils.lerp(0, MathUtils.TAU_f, this.t), Window.getWidth() / 2f, Window.getHeight() / 2f);
+        batch.addSprite(this.logoTexture, Window.getWidth() / 2f - 150, Window.getHeight() / 2f - 150, 300, 300, MathUtils.lerp(0, MathUtils.PI_TIMES_2, this.t), Window.getWidth() / 2f, Window.getHeight() / 2f);
         batch.addText(this.bitmapFont, "FPS: " + Window.getFpsCount(), 10, Window.getHeight() - 50, 1.1f);
     }
 }
