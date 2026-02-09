@@ -5,8 +5,8 @@ public class MathUtils {
     public static final float TAU_f = (float) Math.TAU;
     public static final float PI_OVER_2 = PI_f / 2.0f;
 
-    private static final float[] sinTable = createSinTable();
     private static final int TABLE_SIZE = 1024;
+    private static final float[] sinTable = createSinTable();
     private static final float sinTableSizeOverPi2 = TABLE_SIZE / TAU_f;
     private static final int lookupTableMask = TABLE_SIZE - 1;
 
