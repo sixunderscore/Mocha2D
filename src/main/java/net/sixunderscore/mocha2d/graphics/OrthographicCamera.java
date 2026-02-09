@@ -1,6 +1,5 @@
-package net.sixunderscore.mocha2d.util;
+package net.sixunderscore.mocha2d.graphics;
 
-import net.sixunderscore.mocha2d.graphics.Window;
 import org.joml.Matrix4f;
 import org.lwjgl.system.MemoryUtil;
 

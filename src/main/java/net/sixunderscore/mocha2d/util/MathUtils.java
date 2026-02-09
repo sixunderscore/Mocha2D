@@ -2,17 +2,17 @@ package net.sixunderscore.mocha2d.util;
 
 public class MathUtils {
     public static final float PI_f = (float) Math.PI;
-    public static final float PI_TIMES_2 = PI_f * 2.0f;
+    public static final float TAU_f = (float) Math.TAU;
     public static final float PI_OVER_2 = PI_f / 2.0f;
 
     private static final float[] sinTable = createSinTable();
     private static final int TABLE_SIZE = 1024;
-    private static final float sinTableSizeOverPi2 = TABLE_SIZE / PI_TIMES_2;
+    private static final float sinTableSizeOverPi2 = TABLE_SIZE / TAU_f;
     private static final int lookupTableMask = TABLE_SIZE - 1;
 
     private static float[] createSinTable() {
         float[] table = new float[TABLE_SIZE];
-        float step = PI_TIMES_2 / TABLE_SIZE;
+        float step = TAU_f / TABLE_SIZE;
         float theta = 0;
 
         for (int i = 0; i < TABLE_SIZE; ++i) {
