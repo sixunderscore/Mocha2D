@@ -4,25 +4,29 @@ import net.sixunderscore.mocha2d.graphics.Window;
 
 public class FpsHelper {
     // Fps Cap
-    private final boolean shouldCap;
-    private final long targetFrameDurationNanos;
+    private boolean shouldCap;
+    private long targetFrameDurationNanos;
     private long nextFrameTimeNanos;
+    private float sleepTimePaddingFactor;
     // Fps Counter
     private int fpsCount;
     private float fpsCountUpdateTimer;
 
     public FpsHelper(int fpsCap) {
+        this.setFpsCap(fpsCap);
+        this.fpsCount = 0;
+        this.fpsCountUpdateTimer = 0;
+    }
+
+    public void setFpsCap(int fpsCap) {
         if (fpsCap > 0) {
             this.targetFrameDurationNanos = 1_000_000_000L / fpsCap;
             this.nextFrameTimeNanos = System.nanoTime() + this.targetFrameDurationNanos;
+            this.sleepTimePaddingFactor = Math.min(1f, MathUtils.lerp(1f, 0.1f, fpsCap / 5000f));
             this.shouldCap = true;
         } else {
-            this.targetFrameDurationNanos = 0;
             this.shouldCap = false;
         }
-
-        this.fpsCount = 0;
-        this.fpsCountUpdateTimer = 0;
     }
 
     public void cap() {
@@ -30,16 +34,19 @@ public class FpsHelper {
             return;
         }
 
-        // Sleep 85% of the total time to add a bit of padding in case the thread oversleeps
-        try {
-            long capTimeNanos = Math.max(this.nextFrameTimeNanos - System.nanoTime(), 0);
-            long sleepTarget = (long) (capTimeNanos * 0.85);
+        if (this.sleepTimePaddingFactor > 0) {
+            try {
+                long capTimeNanos = Math.max(this.nextFrameTimeNanos - System.nanoTime(), 0);
 
-            long sleepMillis = sleepTarget / 1_000_000;
-            int sleepNanos = (int) (sleepTarget % 1_000_000);
+                // We add a bit of padding in case the thread oversleeps
+                long sleepTarget = (long) (capTimeNanos * this.sleepTimePaddingFactor);
 
-            Thread.sleep(sleepMillis, sleepNanos);
-        } catch (InterruptedException ignored) {
+                long sleepMillis = sleepTarget / 1_000_000;
+                int sleepNanos = (int) (sleepTarget % 1_000_000);
+
+                Thread.sleep(sleepMillis, sleepNanos);
+            } catch (InterruptedException ignored) {
+            }
         }
 
         // If the thread wakes up before the total time is over spin wait the remaining time
@@ -63,4 +70,3 @@ public class FpsHelper {
         return this.fpsCount;
     }
 }
-

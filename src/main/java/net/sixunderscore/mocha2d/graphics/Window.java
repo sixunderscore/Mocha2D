@@ -92,7 +92,7 @@ public class Window {
         }
         surface = surfaceArr[0];
         viewportScissor = new ViewportScissor();
-        swapChain = new SwapChain(surface, viewportScissor.getScissor().extent(), settings.isVSyncEnabled());
+        swapChain = new SwapChain(surface, viewportScissor.getScissor().extent());
         resourceManager = new ResourceManager(settings.getTextureFiles(), settings.getTtfFiles());
 
         screen = initialScreen;
@@ -144,6 +144,10 @@ public class Window {
 
     public static void setClearColor(Color color) {
         batch.setClearColor(color);
+    }
+
+    public static void setFpsCap(int fpsCap) {
+        fpsHelper.setFpsCap(fpsCap);
     }
 
     public static int getWidth() {

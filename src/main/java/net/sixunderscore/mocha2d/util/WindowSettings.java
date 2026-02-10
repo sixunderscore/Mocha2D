@@ -11,7 +11,6 @@ public class WindowSettings {
     private int initialWidth;
     private int initialHeight;
     private boolean resizeable;
-    private boolean vSyncEnabled;
     private int fpsCap;
     private Color clearColor;
 
@@ -23,7 +22,6 @@ public class WindowSettings {
         this.initialWidth = 800;
         this.initialHeight = 500;
         this.resizeable = true;
-        this.vSyncEnabled = false;
         this.fpsCap = 1000;
         this.clearColor = new Color((byte) 0, (byte) 0, (byte) 0);
     }
@@ -53,13 +51,7 @@ public class WindowSettings {
         this.resizeable = resizeable;
     }
 
-    public void setVSyncEnabled() {
-        this.vSyncEnabled = true;
-        this.fpsCap = 0;
-    }
-
-    public void setVSyncDisabled(int fpsCap) {
-        this.vSyncEnabled = false;
+    public void setFPSCap(int fpsCap) {
         this.fpsCap = fpsCap;
     }
 
@@ -85,10 +77,6 @@ public class WindowSettings {
 
     public boolean isResizeable() {
         return this.resizeable;
-    }
-
-    public boolean isVSyncEnabled() {
-        return this.vSyncEnabled;
     }
 
     public int getFpsCap() {

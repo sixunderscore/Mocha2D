@@ -10,20 +10,18 @@ import java.nio.LongBuffer;
 public class SwapChain implements AutoCloseable {
     private final int imageCount;
     private final int imageFormat;
-    private final boolean vSyncEnabled;
     private long swapChain;
     private long[] images;
     private long[] imageViews;
 
-    public SwapChain(long surface, VkExtent2D extent, boolean vSyncEnabled) {
-        this(surface, extent, vSyncEnabled, VK14.VK_NULL_HANDLE);
+    public SwapChain(long surface, VkExtent2D extent) {
+        this(surface, extent, VK14.VK_NULL_HANDLE);
     }
 
-    public SwapChain(long surface, VkExtent2D extent, boolean vSyncEnabled, long oldSwapChain) {
+    public SwapChain(long surface, VkExtent2D extent, long oldSwapChain) {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             this.imageCount = this.getImageCount(stack, surface);
             this.imageFormat = this.getImageFormat(stack, surface);
-            this.vSyncEnabled = vSyncEnabled;
 
             this.swapChain = this.createSwapChain(stack, surface, extent, oldSwapChain);
             this.images = this.getSwapChainImages();
@@ -86,7 +84,7 @@ public class SwapChain implements AutoCloseable {
                 .imageSharingMode(VK14.VK_SHARING_MODE_EXCLUSIVE)
                 .preTransform(KHRSurface.VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR)
                 .compositeAlpha(KHRSurface.VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR)
-                .presentMode(this.vSyncEnabled ? KHRSurface.VK_PRESENT_MODE_FIFO_KHR : KHRSurface.VK_PRESENT_MODE_IMMEDIATE_KHR)
+                .presentMode(KHRSurface.VK_PRESENT_MODE_IMMEDIATE_KHR)
                 .clipped(true)
                 .oldSwapchain(oldSwapChain);
 
