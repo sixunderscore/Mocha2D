@@ -136,7 +136,6 @@ public class Window {
     }
 
     public static void setScreen(Screen newScreen) {
-        screen.cleanUp();
         screen = newScreen;
         screen.init(resourceManager);
         inputCallbackManager.setCallbacks(window, screen);
