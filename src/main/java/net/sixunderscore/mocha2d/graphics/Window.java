@@ -174,7 +174,6 @@ public class Window {
     }
 
     private static void cleanUp() {
-        screen.cleanUp();
         camera.close();
         batch.close();
         resourceManager.close();
