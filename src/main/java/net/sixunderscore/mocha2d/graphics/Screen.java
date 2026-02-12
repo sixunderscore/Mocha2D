@@ -12,4 +12,5 @@ public interface Screen {
     default void onCharTyped(int codepoint) {}
     default void onWindowResized() {}
     void render(BatchRenderer batch);
+    default void cleanUp() {}
 }

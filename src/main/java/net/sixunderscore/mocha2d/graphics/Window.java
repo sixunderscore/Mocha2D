@@ -136,6 +136,7 @@ public class Window {
     }
 
     public static void setScreen(Screen newScreen) {
+        screen.cleanUp();
         screen = newScreen;
         screen.init(resourceManager);
         inputCallbackManager.setCallbacks(window, screen);
@@ -174,6 +175,7 @@ public class Window {
     }
 
     private static void cleanUp() {
+        screen.cleanUp();
         camera.close();
         batch.close();
         resourceManager.close();
