@@ -25,7 +25,6 @@ public class Window {
     private static boolean shouldRebuildSwapChain = false;
     private static ResourceManager resourceManager;
     private static Screen screen;
-    private static Screen nextScreen;
     private static BatchRenderer batch;
     private static OrthographicCamera camera;
     private static InputCallbackManager inputCallbackManager;
