@@ -71,7 +71,7 @@ public class BatchRenderer implements AutoCloseable {
     public void addSprite(TextureRegion texture, float x, float y, float width, float height, float rotationRadians, float pivotX, float pivotY) {
         float rotationSin = 0;
         float rotationCos = 1f;
-        if (Math.abs(rotationRadians) > 0.001f) {
+        if (rotationRadians != 0) {
             rotationSin = MathUtils.lookupSin(rotationRadians);
             rotationCos = MathUtils.lookupCos(rotationRadians);
         }
@@ -91,7 +91,7 @@ public class BatchRenderer implements AutoCloseable {
         float rotationSin = 0;
         float rotationCos = 1f;
 
-        if (Math.abs(rotationRadians) > 0.001f) {
+        if (rotationRadians != 0) {
             rotationSin = MathUtils.lookupSin(rotationRadians);
             rotationCos = MathUtils.lookupCos(rotationRadians);
         }
