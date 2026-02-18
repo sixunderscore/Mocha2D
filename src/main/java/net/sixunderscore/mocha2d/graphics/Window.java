@@ -15,8 +15,8 @@ import org.lwjgl.vulkan.VK14;
 
 public class Window {
     private static long window;
-    private static int fbWidth;
-    private static int fbHeight;
+    private static int width;
+    private static int height;
     private static float xScale;
     private static float yScale;
     private static long surface;
@@ -62,24 +62,26 @@ public class Window {
         int[] widthArr = new int[1];
         int[] heightArr = new int[1];
         GLFW.glfwGetFramebufferSize(window, widthArr, heightArr);
-        fbWidth = widthArr[0];
-        fbHeight = heightArr[0];
+        width = widthArr[0];
+        height = heightArr[0];
 
         GLFW.glfwSetFramebufferSizeCallback(window, (window, newWidth, newHeight) -> {
-            fbWidth = newWidth;
-            fbHeight = newHeight;
+            width = newWidth;
+            height = newHeight;
             camera.adjustProjection();
             screen.onWindowResized();
             shouldRebuildSwapChain = true;
         });
 
-        GLFW.glfwGetWindowSize(window, widthArr, heightArr);
-        xScale = (float) fbWidth / widthArr[0];
-        yScale = (float) fbHeight / heightArr[0];
+        float[] xScaleArr = new float[1];
+        float[] yScaleArr = new float[1];
+        GLFW.glfwGetWindowContentScale(window, xScaleArr, yScaleArr);
+        xScale = xScaleArr[0];
+        yScale = yScaleArr[0];
 
-        GLFW.glfwSetWindowSizeCallback(window, (window, newWidth, newHeight) -> {
-            xScale = (float) fbWidth / newWidth;
-            yScale = (float) fbHeight / newHeight;
+        GLFW.glfwSetWindowContentScaleCallback(window, (window, newXScale, newYScale) -> {
+            xScale = newXScale;
+            yScale = newYScale;
         });
 
         setWindowIcon(settings.getWindowIconPath());
@@ -149,11 +151,11 @@ public class Window {
     }
 
     public static int getWidth() {
-        return fbWidth;
+        return width;
     }
 
     public static int getHeight() {
-        return fbHeight;
+        return height;
     }
 
     public static float getXScale() {
