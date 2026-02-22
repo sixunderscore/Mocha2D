@@ -94,12 +94,14 @@ public class Window {
         resourceManager = new ResourceManager(settings.getTextureFiles(), settings.getTtfFiles());
 
         screen = initialScreen;
-        screen.init(resourceManager);
+
         inputCallbackManager = new InputCallbackManager(window, screen);
         camera = new OrthographicCamera();
         batch = new BatchRenderer(resourceManager, swapChain, settings.getClearColor());
         fpsHelper = new FpsHelper(settings.getFpsCap());
         deltaTime = new DeltaTime();
+
+        screen.init(resourceManager);
     }
 
     private static void loop() {

@@ -58,9 +58,9 @@ public class BatchRenderer implements AutoCloseable {
 
         this.imageIndexBuffer = MemoryUtil.memAllocInt(1);
         this.clearColor = VkClearColorValue.calloc()
-                .float32(0, clearColor.normalizedR())
-                .float32(1, clearColor.normalizedG())
-                .float32(2, clearColor.normalizedB())
+                .float32(0, clearColor.normalizedLinearR())
+                .float32(1, clearColor.normalizedLinearG())
+                .float32(2, clearColor.normalizedLinearB())
                 .float32(3, 1f);
     }
 
@@ -222,9 +222,9 @@ public class BatchRenderer implements AutoCloseable {
 
     public void setClearColor(Color color) {
         this.clearColor
-                .float32(0, color.normalizedR())
-                .float32(1, color.normalizedG())
-                .float32(2, color.normalizedB());
+                .float32(0, color.normalizedLinearR())
+                .float32(1, color.normalizedLinearG())
+                .float32(2, color.normalizedLinearB());
     }
 
     @Override
