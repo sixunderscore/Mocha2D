@@ -1,15 +1,15 @@
 package net.sixunderscore.mocha2d.util;
 
 public record Color(byte r, byte g, byte b) {
-    public float normalizedLinearR() {
+    public float linearR() {
         return this.srgbToLinear(Byte.toUnsignedInt(this.r) / 255f);
     }
 
-    public float normalizedLinearG() {
+    public float linearG() {
         return this.srgbToLinear(Byte.toUnsignedInt(this.g) / 255f);
     }
 
-    public float normalizedLinearB() {
+    public float linearB() {
         return this.srgbToLinear(Byte.toUnsignedInt(this.b) / 255f);
     }
 

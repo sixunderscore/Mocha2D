@@ -6,7 +6,6 @@ import net.sixunderscore.mocha2d.graphics.render.BatchRenderer;
 import net.sixunderscore.mocha2d.graphics.resources.ResourceManager;
 import net.sixunderscore.mocha2d.graphics.resources.text.BitmapFont;
 import net.sixunderscore.mocha2d.graphics.resources.textures.TextureRegion;
-import net.sixunderscore.mocha2d.util.Color;
 import net.sixunderscore.mocha2d.util.MathUtils;
 import org.lwjgl.glfw.GLFW;
 
@@ -18,7 +17,6 @@ public class SampleScreen implements Screen {
 
     @Override
     public void init(ResourceManager resourceManager) {
-        Window.setClearColor(new Color((byte) 19, (byte) 144, (byte) 178));
         this.logoTexture = resourceManager.getFullTexture("logo");
         this.bitmapFont = resourceManager.getBitmapFont("roboto");
 
