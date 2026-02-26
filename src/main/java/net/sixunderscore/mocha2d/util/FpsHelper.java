@@ -3,26 +3,43 @@ package net.sixunderscore.mocha2d.util;
 import net.sixunderscore.mocha2d.graphics.Window;
 
 public class FpsHelper {
+    private final boolean windows;
+
     // Fps Cap
     private boolean shouldCap;
     private long targetFrameDurationNanos;
     private long nextFrameTimeNanos;
     private float sleepTimePaddingFactor;
+    
     // Fps Counter
     private int fpsCount;
     private float fpsCountUpdateTimer;
 
     public FpsHelper(int fpsCap) {
+        this.windows = System.getProperty("os.name").toLowerCase().contains("win");
+
         this.setFpsCap(fpsCap);
         this.fpsCount = 0;
         this.fpsCountUpdateTimer = 0;
+
+        if (this.windows) {
+            // For some reason this improves sleep accuracy on windows
+            Thread timerAccuracyThread = new Thread(() -> {
+                try {
+                    Thread.sleep(Long.MAX_VALUE);
+                } catch (InterruptedException e) {
+                }
+            });
+            timerAccuracyThread.setDaemon(true);
+            timerAccuracyThread.start();
+        }
     }
 
     public void setFpsCap(int fpsCap) {
         if (fpsCap > 0) {
             this.targetFrameDurationNanos = 1_000_000_000L / fpsCap;
             this.nextFrameTimeNanos = System.nanoTime() + this.targetFrameDurationNanos;
-            this.sleepTimePaddingFactor = Math.min(1f, MathUtils.lerp(1f, 0.1f, fpsCap / 5000f));
+            this.sleepTimePaddingFactor = Math.min(1f, MathUtils.lerp(1f, 0.1f, fpsCap / (this.windows ? 500f : 5000f)));
             this.shouldCap = true;
         } else {
             this.shouldCap = false;
