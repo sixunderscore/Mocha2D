@@ -61,7 +61,7 @@ public class BatchRenderer implements AutoCloseable {
                 .float32(0, clearColor.linearR())
                 .float32(1, clearColor.linearG())
                 .float32(2, clearColor.linearB())
-                .float32(3, 1f);
+                .float32(3, 0);
     }
 
     public void addSprite(TextureRegion texture, float x, float y, float width, float height) {
@@ -221,18 +221,10 @@ public class BatchRenderer implements AutoCloseable {
     }
 
     public void setClearColor(Color color) {
-        Color finalColor = color;
-
-        if (color.r() == 0 && color.g() == 0 && color.b() == 0) {
-            // When switching from a non 0 clear color to 0 (fully black) some drivers may do a little trolling
-            // So instead we use a number really close to 0 to force normal clear behavior
-            finalColor = new Color((byte) 1, (byte) 1, (byte) 1);
-        }
-
         this.clearColor
-                .float32(0, finalColor.linearR())
-                .float32(1, finalColor.linearG())
-                .float32(2, finalColor.linearB());
+                .float32(0, color.linearR())
+                .float32(1, color.linearG())
+                .float32(2, color.linearB());
     }
 
     @Override
