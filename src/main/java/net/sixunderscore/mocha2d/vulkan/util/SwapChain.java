@@ -15,15 +15,11 @@ public class SwapChain implements AutoCloseable {
     private long[] imageViews;
 
     public SwapChain(long surface, VkExtent2D extent) {
-        this(surface, extent, VK14.VK_NULL_HANDLE);
-    }
-
-    public SwapChain(long surface, VkExtent2D extent, long oldSwapChain) {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             this.imageCount = this.getImageCount(stack, surface);
             this.imageFormat = this.getImageFormat(stack, surface);
 
-            this.swapChain = this.createSwapChain(stack, surface, extent, oldSwapChain);
+            this.swapChain = this.createSwapChain(stack, surface, extent, VK14.VK_NULL_HANDLE);
             this.images = this.getSwapChainImages();
             this.imageViews = this.createImageViews(stack);
         }
