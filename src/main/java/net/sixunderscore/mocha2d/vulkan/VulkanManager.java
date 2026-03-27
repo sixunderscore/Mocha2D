@@ -34,7 +34,7 @@ public class VulkanManager {
                 .sType$Default()
                 .pApplicationName(stack.UTF8("Mocha2D"))
                 .pEngineName(stack.UTF8("Mocha2D"))
-                .apiVersion(VK.getInstanceVersionSupported());
+                .apiVersion(VK14.VK_API_VERSION_1_3);
 
         PointerBuffer glfwExtensions = GLFWVulkan.glfwGetRequiredInstanceExtensions();
 
@@ -128,16 +128,17 @@ public class VulkanManager {
         IntBuffer extensionsCountBuff = stack.mallocInt(1);
         VK14.vkEnumerateDeviceExtensionProperties(physicalDevice, (ByteBuffer) null, extensionsCountBuff, null);
 
-        VkExtensionProperties.Buffer availableExtensions = VkExtensionProperties.calloc(extensionsCountBuff.get(0), stack);
-        VK14.vkEnumerateDeviceExtensionProperties(physicalDevice, (ByteBuffer) null, extensionsCountBuff, availableExtensions);
+        try (VkExtensionProperties.Buffer availableExtensions = VkExtensionProperties.malloc(extensionsCountBuff.get(0))) {
+            VK14.vkEnumerateDeviceExtensionProperties(physicalDevice, (ByteBuffer) null, extensionsCountBuff, availableExtensions);
 
-        for (VkExtensionProperties extensionProperties : availableExtensions) {
-            if (extensionProperties.extensionNameString().equals(KHRSwapchain.VK_KHR_SWAPCHAIN_EXTENSION_NAME)) {
-                return true;
+            for (VkExtensionProperties extensionProperties : availableExtensions) {
+                if (extensionProperties.extensionNameString().equals(KHRSwapchain.VK_KHR_SWAPCHAIN_EXTENSION_NAME)) {
+                    return true;
+                }
             }
-        }
 
-        return false;
+            return false;
+        }
     }
 
     private static int findGraphicsQueueFamilyIndex(MemoryStack stack, VkPhysicalDevice physicalDevice) {
@@ -215,7 +216,7 @@ public class VulkanManager {
         VmaVulkanFunctions vmaVulkanFunctions = VmaVulkanFunctions.calloc(stack).set(instance, logicalDevice);
 
         VmaAllocatorCreateInfo allocationCreateInfo = VmaAllocatorCreateInfo.calloc(stack)
-                .vulkanApiVersion(VK.getInstanceVersionSupported())
+                .vulkanApiVersion(VK14.VK_API_VERSION_1_3)
                 .instance(instance)
                 .physicalDevice(physicalDevice)
                 .device(logicalDevice)
