@@ -6,7 +6,7 @@ group = 'net.sixunderscore.mocha2d'
 version = 'dev'
 
 project.ext.lwjglVersion = "3.4.1"
-project.ext.jomlVersion = "1.10.8"
+project.ext.jomlVersion = "1.10.9"
 
 project.ext.lwjglNatives = [
         "natives-linux",
@@ -38,9 +38,7 @@ dependencies {
 }
 
 tasks.register('copyLibs', Copy) {
-    from configurations.runtimeClasspath.filter {
-        !it.name.contains("annotations") && !it.name.contains("kotlin")
-    }
+    from configurations.runtimeClasspath
     into layout.buildDirectory.dir("libs/libraries")
 }
 
@@ -48,4 +46,9 @@ tasks.build {
     dependsOn tasks.copyLibs
 }
 
-
+tasks.withType(JavaExec).configureEach {
+    jvmArgs += [
+            '--enable-native-access=ALL-UNNAMED',
+            '-Djoml.nounsafe=true'
+    ]
+}

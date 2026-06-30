@@ -206,7 +206,14 @@ public class BatchRenderer implements AutoCloseable {
 
                 long renderFinishedSemaphore = this.renderFinishedSemaphores[imageIndex];
                 frameResources.submitCommandBuffer(stack, imageAvailableSemaphore, renderFinishedSemaphore, inFlightFence);
-                frameResources.presentImageToSwapChain(stack, renderFinishedSemaphore, swapChain, this.imageIndexBuffer);
+
+                VkPresentInfoKHR presentInfo = VkPresentInfoKHR.calloc(stack)
+                        .sType$Default()
+                        .pImageIndices(this.imageIndexBuffer)
+                        .pWaitSemaphores(stack.mallocLong(1).put(0, renderFinishedSemaphore))
+                        .pSwapchains(stack.mallocLong(1).put(0, swapChain.getSwapChain()))
+                        .swapchainCount(1);
+                KHRSwapchain.vkQueuePresentKHR(VulkanManager.getGraphicsQueue(), presentInfo);
 
                 this.frameInFlightIndex = ++this.frameInFlightIndex % this.framesInFlight;
             }

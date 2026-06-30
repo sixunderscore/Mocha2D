@@ -8,7 +8,7 @@ import net.sixunderscore.mocha2d.graphics.resources.TtfFile;
 import net.sixunderscore.mocha2d.util.WindowSettings;
 
 public class Main {
-    public static void main(String[] args) {
+    static void main() {
         WindowSettings windowSettings = new WindowSettings();
         windowSettings.setTextureFiles(
                 new TextureFile("sample_assets/textures/logo.jpg", false, "logo")

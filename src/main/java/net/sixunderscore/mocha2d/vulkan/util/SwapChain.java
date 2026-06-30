@@ -128,6 +128,7 @@ public class SwapChain implements AutoCloseable {
 
     public void rebuild(long[] waitFences, long surface, VkExtent2D extent) {
         VK14.vkWaitForFences(VulkanManager.getLogicalDevice(), waitFences, true, Long.MAX_VALUE);
+        VK14.vkDeviceWaitIdle(VulkanManager.getLogicalDevice());
 
         long oldSwapChain = this.swapChain;
         long[] oldImageViews = this.imageViews;

@@ -9,7 +9,6 @@ import org.lwjgl.util.vma.Vma;
 import org.lwjgl.vulkan.*;
 
 import java.nio.FloatBuffer;
-import java.nio.IntBuffer;
 import java.nio.ShortBuffer;
 
 public class FrameResources implements AutoCloseable {
@@ -125,17 +124,6 @@ public class FrameResources implements AutoCloseable {
                 .pCommandBufferInfos(commandBufferSubmitInfo);
 
         VK14.vkQueueSubmit2(VulkanManager.getGraphicsQueue(), submitInfo, signalFence);
-    }
-
-    public void presentImageToSwapChain(MemoryStack stack, long waitSemaphore, SwapChain swapChain, IntBuffer imageIndex) {
-        VkPresentInfoKHR presentInfo = VkPresentInfoKHR.calloc(stack)
-                .sType$Default()
-                .pImageIndices(imageIndex)
-                .pWaitSemaphores(stack.mallocLong(1).put(0, waitSemaphore))
-                .pSwapchains(stack.mallocLong(1).put(0, swapChain.getSwapChain()))
-                .swapchainCount(1);
-
-        KHRSwapchain.vkQueuePresentKHR(VulkanManager.getGraphicsQueue(), presentInfo);
     }
 
     public ShortBuffer getMappedIndexBuffer() {
