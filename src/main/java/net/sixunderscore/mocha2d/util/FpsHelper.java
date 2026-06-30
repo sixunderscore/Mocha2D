@@ -27,7 +27,7 @@ public class FpsHelper {
             Thread timerAccuracyThread = new Thread(() -> {
                 try {
                     Thread.sleep(Long.MAX_VALUE);
-                } catch (InterruptedException e) {
+                } catch (InterruptedException _) {
                 }
             });
             timerAccuracyThread.setDaemon(true);
@@ -62,7 +62,7 @@ public class FpsHelper {
                 int sleepNanos = (int) (sleepTarget % 1_000_000);
 
                 Thread.sleep(sleepMillis, sleepNanos);
-            } catch (InterruptedException ignored) {
+            } catch (InterruptedException _) {
             }
         }
 
