@@ -76,7 +76,18 @@ public class BatchRenderer implements AutoCloseable {
             rotationCos = MathUtils.lookupCos(rotationRadians);
         }
 
-        this.addQuad(texture, x, y, width, height, rotationSin, rotationCos, pivotX, pivotY);
+        float endX = x + width;
+        float endY = y + height;
+
+        this.writeToBuffers(
+                texture,
+                x, y,
+                endX, y,
+                x, endY,
+                endX, endY,
+                rotationSin, rotationCos,
+                pivotX, pivotY
+        );
     }
 
     public void addText(BitmapFont bitmapFont, String text, float x, float y, float charScale) {
@@ -110,12 +121,19 @@ public class BatchRenderer implements AutoCloseable {
                     GlyphData glyphData = bitmapFont.getGlyphData(c);
                     TextureRegion texture = glyphData.textureRegion();
 
-                    this.addQuad(
+                    float width = texture.width() * charScale;
+                    float height = texture.height() * charScale;
+                    float charX = cursorX;
+                    float endCharX = charX + width;
+                    float charY = cursorY + glyphData.descent() * charScale;
+                    float endCharY = charY + height;
+
+                    this.writeToBuffers(
                             texture,
-                            cursorX,
-                            cursorY + glyphData.descent() * charScale,
-                            texture.width() * charScale,
-                            texture.height() * charScale,
+                            charX, charY,
+                            endCharX, charY,
+                            charX, endCharY,
+                            endCharX, endCharY,
                             rotationSin,
                             rotationCos,
                             pivotX,
@@ -128,7 +146,29 @@ public class BatchRenderer implements AutoCloseable {
         }
     }
 
-    private void addQuad(TextureRegion texture, float x, float y, float width, float height, float rotationSin, float rotationCos, float pivotX, float pivotY) {
+    public void addTexturedQuad(TextureRegion texture,
+                                float bottomLeftX, float bottomLeftY,
+                                float bottomRightX, float bottomRightY,
+                                float topLeftX, float topLeftY,
+                                float topRightX, float topRightY) {
+        this.writeToBuffers(
+                texture,
+                bottomLeftX, bottomLeftY,
+                bottomRightX, bottomRightY,
+                topLeftX, topLeftY,
+                topRightX, topRightY,
+                0, 1f,
+                0, 0
+        );
+    }
+
+    private void writeToBuffers(TextureRegion texture,
+                                float bottomLeftX, float bottomLeftY,
+                                float bottomRightX, float bottomRightY,
+                                float topLeftX, float topLeftY,
+                                float topRightX, float topRightY,
+                                float rotationSin, float rotationCos,
+                                float pivotX, float pivotY) {
         FrameResources frameResources = this.frameResources[this.frameInFlightIndex];
         ShortBuffer mappedIndexBuffer = frameResources.getMappedIndexBuffer();
         FloatBuffer mappedVertexBuffer = frameResources.getMappedVertexBuffer();
@@ -151,28 +191,28 @@ public class BatchRenderer implements AutoCloseable {
         int index = texture.imageIndex();
 
         mappedVertexBuffer
-                .put(x).put(y)
+                .put(bottomLeftX).put(bottomLeftY)
                 .put(texture.topLeftU()).put(texture.topLeftV())
                 .put(index)
                 .put(rotationSin).put(rotationCos)
                 .put(pivotX).put(pivotY);
 
         mappedVertexBuffer
-                .put(x + width).put(y)
+                .put(bottomRightX).put(bottomRightY)
                 .put(texture.topRightU()).put(texture.topRightV())
                 .put(index)
                 .put(rotationSin).put(rotationCos)
                 .put(pivotX).put(pivotY);
 
         mappedVertexBuffer
-                .put(x).put(y + height)
+                .put(topLeftX).put(topLeftY)
                 .put(texture.bottomLeftU()).put(texture.bottomLeftV())
                 .put(index)
                 .put(rotationSin).put(rotationCos)
                 .put(pivotX).put(pivotY);
 
         mappedVertexBuffer
-                .put(x + width).put(y + height)
+                .put(topRightX).put(topRightY)
                 .put(texture.bottomRightU()).put(texture.bottomRightV())
                 .put(index)
                 .put(rotationSin).put(rotationCos)
