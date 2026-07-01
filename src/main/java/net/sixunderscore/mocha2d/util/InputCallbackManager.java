@@ -20,17 +20,17 @@ public class InputCallbackManager {
 
         // Mouse
         // We flip cursor y coordinate
-        this.cursorPosCallback = GLFW.glfwSetCursorPosCallback(window, (window2, xPos, yPos) -> {
+        this.cursorPosCallback = GLFW.glfwSetCursorPosCallback(window, (_, xPos, yPos) -> {
             double fbX = xPos * Window.getXScale();
             double fbY = yPos * Window.getYScale();
             screen.onMouseMoved(fbX, (Window.getHeight() - fbY));
         });
-        this.mouseButtonCallback = GLFW.glfwSetMouseButtonCallback(window, (window2, button, action, mods) -> screen.onMouseClicked(button, action, mods));
-        this.scrollCallback = GLFW.glfwSetScrollCallback(window, (window2, xOffset, yOffset) -> screen.onMouseScrolled(xOffset, yOffset));
+        this.mouseButtonCallback = GLFW.glfwSetMouseButtonCallback(window, (_, button, action, mods) -> screen.onMouseClicked(button, action, mods));
+        this.scrollCallback = GLFW.glfwSetScrollCallback(window, (_, xOffset, yOffset) -> screen.onMouseScrolled(xOffset, yOffset));
 
         // Keyboard
-        this.keyCallback = GLFW.glfwSetKeyCallback(window, (window2, keycode, scancode, action, mods) -> screen.onKeyPressed(keycode, scancode, action, mods));
-        this.charCallback = GLFW.glfwSetCharCallback(window, (window2, codepoint) -> screen.onCharTyped(codepoint));
+        this.keyCallback = GLFW.glfwSetKeyCallback(window, (_, keycode, scancode, action, mods) -> screen.onKeyPressed(keycode, scancode, action, mods));
+        this.charCallback = GLFW.glfwSetCharCallback(window, (_, codepoint) -> screen.onCharTyped(codepoint));
     }
 
     private void cleanUp() {
