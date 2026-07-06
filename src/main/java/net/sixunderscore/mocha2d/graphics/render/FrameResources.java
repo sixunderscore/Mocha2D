@@ -2,6 +2,7 @@ package net.sixunderscore.mocha2d.graphics.render;
 
 import net.sixunderscore.mocha2d.graphics.resources.ResourceManager;
 import net.sixunderscore.mocha2d.graphics.OrthographicCamera;
+import net.sixunderscore.mocha2d.graphics.resources.textures.TextureRegion;
 import net.sixunderscore.mocha2d.vulkan.VulkanManager;
 import net.sixunderscore.mocha2d.vulkan.util.*;
 import org.lwjgl.system.MemoryStack;
@@ -16,6 +17,7 @@ public class FrameResources implements AutoCloseable {
     private final VkCommandBuffer commandBuffer;
     private final GpuBuffer indexBuffer;
     private final ShortBuffer mappedIndexBuffer;
+    private int indexOffset;
     private final GpuBuffer vertexBuffer;
     private final FloatBuffer mappedVertexBuffer;
 
@@ -25,8 +27,62 @@ public class FrameResources implements AutoCloseable {
 
         this.indexBuffer = new GpuBuffer(stack, indexBufferSizeBytes, VK14.VK_BUFFER_USAGE_INDEX_BUFFER_BIT, Vma.VMA_MEMORY_USAGE_CPU_TO_GPU);
         this.mappedIndexBuffer = this.indexBuffer.map(stack).asShortBuffer();
+        this.indexOffset = 0;
         this.vertexBuffer = new GpuBuffer(stack, vertexBufferSizeBytes, VK14.VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, Vma.VMA_MEMORY_USAGE_CPU_TO_GPU);
         this.mappedVertexBuffer = this.vertexBuffer.map(stack).asFloatBuffer();
+    }
+
+    public void writeQuadToBuffers(TextureRegion texture,
+                          float bottomLeftX, float bottomLeftY,
+                          float bottomRightX, float bottomRightY,
+                          float topLeftX, float topLeftY,
+                          float topRightX, float topRightY,
+                          float rotationSin, float rotationCos,
+                          float pivotX, float pivotY) {
+        // ---- Writing index data for quad ----
+
+        this.mappedIndexBuffer
+                .put((short) this.indexOffset)        // Top-left
+                .put((short) (this.indexOffset + 1))  // Top-right
+                .put((short) (this.indexOffset + 2))  // Bottom-left
+
+                .put((short) (this.indexOffset + 1))  // Top-right
+                .put((short) (this.indexOffset + 3))  // Bottom-right
+                .put((short) (this.indexOffset + 2)); // Bottom-left
+
+        this.indexOffset += 4;
+
+        // ---- Writing vertex data for quad ----
+
+        int index = texture.imageIndex();
+
+        this.mappedVertexBuffer
+                .put(bottomLeftX).put(bottomLeftY)
+                .put(texture.topLeftU()).put(texture.topLeftV())
+                .put(index)
+                .put(rotationSin).put(rotationCos)
+                .put(pivotX).put(pivotY);
+
+        this.mappedVertexBuffer
+                .put(bottomRightX).put(bottomRightY)
+                .put(texture.topRightU()).put(texture.topRightV())
+                .put(index)
+                .put(rotationSin).put(rotationCos)
+                .put(pivotX).put(pivotY);
+
+        this.mappedVertexBuffer
+                .put(topLeftX).put(topLeftY)
+                .put(texture.bottomLeftU()).put(texture.bottomLeftV())
+                .put(index)
+                .put(rotationSin).put(rotationCos)
+                .put(pivotX).put(pivotY);
+
+        this.mappedVertexBuffer
+                .put(topRightX).put(topRightY)
+                .put(texture.bottomRightU()).put(texture.bottomRightV())
+                .put(index)
+                .put(rotationSin).put(rotationCos)
+                .put(pivotX).put(pivotY);
     }
 
     public void recordGraphicsCommands(MemoryStack stack, SwapChain swapChain, ResourceManager resourceManager, ViewportScissor viewportScissor, GraphicsPipeline pipeline, int imageIndex, VkClearColorValue clearColorValue, OrthographicCamera camera) {
@@ -126,17 +182,10 @@ public class FrameResources implements AutoCloseable {
         VK14.vkQueueSubmit2(VulkanManager.getGraphicsQueue(), submitInfo, signalFence);
     }
 
-    public ShortBuffer getMappedIndexBuffer() {
-        return this.mappedIndexBuffer;
-    }
-
-    public FloatBuffer getMappedVertexBuffer() {
-        return this.mappedVertexBuffer;
-    }
-
-    public void resetMappedBuffers() {
+    public void reset() {
         this.mappedVertexBuffer.clear();
         this.mappedIndexBuffer.clear();
+        this.indexOffset = 0;
     }
 
     @Override

@@ -13,9 +13,7 @@ import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.vulkan.*;
 
-import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
-import java.nio.ShortBuffer;
 
 public class BatchRenderer implements AutoCloseable {
     private final int framesInFlight;
@@ -25,14 +23,12 @@ public class BatchRenderer implements AutoCloseable {
     private final long[] imageAvailableSemaphores;
     private final long[] renderFinishedSemaphores;
     private final long[] inFlightFences;
-    private int indexOffset;
     private final IntBuffer imageIndexBuffer;
     private final VkClearColorValue clearColor;
 
     public BatchRenderer(ResourceManager resourceManager, SwapChain swapChain, Color clearColor) {
         this.framesInFlight = swapChain.getImageCount();
         this.frameInFlightIndex = 0;
-        this.indexOffset = 0;
         this.frameResources = new FrameResources[this.framesInFlight];
         this.imageAvailableSemaphores = new long[this.framesInFlight];
         this.renderFinishedSemaphores = new long[this.framesInFlight];
@@ -69,6 +65,7 @@ public class BatchRenderer implements AutoCloseable {
     }
 
     public void addSprite(TextureRegion texture, float x, float y, float width, float height, float rotationRadians, float pivotX, float pivotY) {
+        FrameResources frameResources = this.frameResources[this.frameInFlightIndex];
         float rotationSin = 0;
         float rotationCos = 1f;
         if (rotationRadians != 0) {
@@ -79,7 +76,7 @@ public class BatchRenderer implements AutoCloseable {
         float endX = x + width;
         float endY = y + height;
 
-        this.writeToBuffers(
+        frameResources.writeQuadToBuffers(
                 texture,
                 x, y,
                 endX, y,
@@ -95,6 +92,7 @@ public class BatchRenderer implements AutoCloseable {
     }
 
     public void addText(BitmapFont bitmapFont, String text, float x, float y, float charScale, float rotationRadians, float pivotX, float pivotY) {
+        FrameResources frameResources = this.frameResources[this.frameInFlightIndex];
         float cursorX = x;
         float cursorY = y;
         int strLength = text.length();
@@ -128,7 +126,7 @@ public class BatchRenderer implements AutoCloseable {
                     float charY = cursorY + glyphData.descent() * charScale;
                     float endCharY = charY + height;
 
-                    this.writeToBuffers(
+                    frameResources.writeQuadToBuffers(
                             texture,
                             charX, charY,
                             endCharX, charY,
@@ -151,7 +149,8 @@ public class BatchRenderer implements AutoCloseable {
                                 float bottomRightX, float bottomRightY,
                                 float topLeftX, float topLeftY,
                                 float topRightX, float topRightY) {
-        this.writeToBuffers(
+        FrameResources frameResources = this.frameResources[this.frameInFlightIndex];
+        frameResources.writeQuadToBuffers(
                 texture,
                 bottomLeftX, bottomLeftY,
                 bottomRightX, bottomRightY,
@@ -160,63 +159,6 @@ public class BatchRenderer implements AutoCloseable {
                 0, 1f,
                 0, 0
         );
-    }
-
-    private void writeToBuffers(TextureRegion texture,
-                                float bottomLeftX, float bottomLeftY,
-                                float bottomRightX, float bottomRightY,
-                                float topLeftX, float topLeftY,
-                                float topRightX, float topRightY,
-                                float rotationSin, float rotationCos,
-                                float pivotX, float pivotY) {
-        FrameResources frameResources = this.frameResources[this.frameInFlightIndex];
-        ShortBuffer mappedIndexBuffer = frameResources.getMappedIndexBuffer();
-        FloatBuffer mappedVertexBuffer = frameResources.getMappedVertexBuffer();
-
-        // ---- Writing index data for quad ----
-
-        mappedIndexBuffer
-                .put((short) this.indexOffset)        // Top-left
-                .put((short) (this.indexOffset + 1))  // Top-right
-                .put((short) (this.indexOffset + 2))  // Bottom-left
-
-                .put((short) (this.indexOffset + 1))  // Top-right
-                .put((short) (this.indexOffset + 3))  // Bottom-right
-                .put((short) (this.indexOffset + 2)); // Bottom-left
-
-        this.indexOffset += 4;
-
-        // ---- Writing vertex data for quad ----
-
-        int index = texture.imageIndex();
-
-        mappedVertexBuffer
-                .put(bottomLeftX).put(bottomLeftY)
-                .put(texture.topLeftU()).put(texture.topLeftV())
-                .put(index)
-                .put(rotationSin).put(rotationCos)
-                .put(pivotX).put(pivotY);
-
-        mappedVertexBuffer
-                .put(bottomRightX).put(bottomRightY)
-                .put(texture.topRightU()).put(texture.topRightV())
-                .put(index)
-                .put(rotationSin).put(rotationCos)
-                .put(pivotX).put(pivotY);
-
-        mappedVertexBuffer
-                .put(topLeftX).put(topLeftY)
-                .put(texture.bottomLeftU()).put(texture.bottomLeftV())
-                .put(index)
-                .put(rotationSin).put(rotationCos)
-                .put(pivotX).put(pivotY);
-
-        mappedVertexBuffer
-                .put(topRightX).put(topRightY)
-                .put(texture.bottomRightU()).put(texture.bottomRightV())
-                .put(index)
-                .put(rotationSin).put(rotationCos)
-                .put(pivotX).put(pivotY);
     }
 
     public void draw(OrthographicCamera camera, SwapChain swapChain, ResourceManager resourceManager, ViewportScissor viewportScissor) {
@@ -258,8 +200,7 @@ public class BatchRenderer implements AutoCloseable {
                 this.frameInFlightIndex = ++this.frameInFlightIndex % this.framesInFlight;
             }
 
-            frameResources.resetMappedBuffers();
-            this.indexOffset = 0;
+            frameResources.reset();
         }
     }
 
