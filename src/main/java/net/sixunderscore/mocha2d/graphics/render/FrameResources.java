@@ -5,6 +5,7 @@ import net.sixunderscore.mocha2d.graphics.OrthographicCamera;
 import net.sixunderscore.mocha2d.graphics.resources.textures.TextureRegion;
 import net.sixunderscore.mocha2d.vulkan.VulkanManager;
 import net.sixunderscore.mocha2d.vulkan.util.*;
+import org.joml.Matrix4f;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.util.vma.Vma;
 import org.lwjgl.vulkan.*;
@@ -20,25 +21,51 @@ public class FrameResources implements AutoCloseable {
     private int indexOffset;
     private final GpuBuffer vertexBuffer;
     private final FloatBuffer mappedVertexBuffer;
+    private final GpuBuffer transformBuffer;
+    private final FloatBuffer mappedTransformBuffer;
+    private int transformIndex;
+    private final long transformBufferAddress;
 
-    public FrameResources(MemoryStack stack, int indexBufferSizeBytes, int vertexBufferSizeBytes) {
+    public FrameResources(MemoryStack stack, int indexBufferSizeBytes, int vertexBufferSizeBytes, int transformBufferSizeBytes) {
         this.commandPool = new CommandPool(stack, VulkanManager.getGraphicsQueueIndex(), VK14.VK_COMMAND_POOL_CREATE_TRANSIENT_BIT);
         this.commandBuffer = this.commandPool.allocateCommandBuffer(stack);
 
         this.indexBuffer = new GpuBuffer(stack, indexBufferSizeBytes, VK14.VK_BUFFER_USAGE_INDEX_BUFFER_BIT, Vma.VMA_MEMORY_USAGE_CPU_TO_GPU);
         this.mappedIndexBuffer = this.indexBuffer.map(stack).asShortBuffer();
         this.indexOffset = 0;
+
         this.vertexBuffer = new GpuBuffer(stack, vertexBufferSizeBytes, VK14.VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, Vma.VMA_MEMORY_USAGE_CPU_TO_GPU);
         this.mappedVertexBuffer = this.vertexBuffer.map(stack).asFloatBuffer();
+
+        this.transformBuffer = new GpuBuffer(stack, transformBufferSizeBytes, VK14.VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, Vma.VMA_MEMORY_USAGE_CPU_TO_GPU);
+        this.mappedTransformBuffer = this.transformBuffer.map(stack).asFloatBuffer();
+        this.mappedTransformBuffer
+                .put(1f).put(0)
+                .put(0).put(1f);
+        this.mappedTransformBuffer.put(0).put(0);
+        this.transformIndex = 1;
+
+        VkBufferDeviceAddressInfo bufferDeviceAddressInfo = VkBufferDeviceAddressInfo.calloc(stack)
+                .sType$Default()
+                .buffer(this.transformBuffer.getBuffer());
+        this.transformBufferAddress = VK14.vkGetBufferDeviceAddress(VulkanManager.getLogicalDevice(), bufferDeviceAddressInfo);
+    }
+
+    public int writeTransformToBuffer(float m00, float m10, float m01, float m11, float originX, float originY) {
+        this.mappedTransformBuffer
+                .put(m00).put(m10)
+                .put(m01).put(m11);
+        this.mappedTransformBuffer.put(originX).put(originY);
+
+        return this.transformIndex++;
     }
 
     public void writeQuadToBuffers(TextureRegion texture,
-                          float bottomLeftX, float bottomLeftY,
-                          float bottomRightX, float bottomRightY,
-                          float topLeftX, float topLeftY,
-                          float topRightX, float topRightY,
-                          float rotationSin, float rotationCos,
-                          float pivotX, float pivotY) {
+                                   float bottomLeftX, float bottomLeftY,
+                                   float bottomRightX, float bottomRightY,
+                                   float topLeftX, float topLeftY,
+                                   float topRightX, float topRightY,
+                                   int transformIndex) {
         // ---- Writing index data for quad ----
 
         this.mappedIndexBuffer
@@ -54,35 +81,31 @@ public class FrameResources implements AutoCloseable {
 
         // ---- Writing vertex data for quad ----
 
-        int index = texture.imageIndex();
+        int texIndex = texture.imageIndex();
 
         this.mappedVertexBuffer
                 .put(bottomLeftX).put(bottomLeftY)
                 .put(texture.topLeftU()).put(texture.topLeftV())
-                .put(index)
-                .put(rotationSin).put(rotationCos)
-                .put(pivotX).put(pivotY);
+                .put(texIndex)
+                .put(transformIndex);
 
         this.mappedVertexBuffer
                 .put(bottomRightX).put(bottomRightY)
                 .put(texture.topRightU()).put(texture.topRightV())
-                .put(index)
-                .put(rotationSin).put(rotationCos)
-                .put(pivotX).put(pivotY);
+                .put(texIndex)
+                .put(transformIndex);
 
         this.mappedVertexBuffer
                 .put(topLeftX).put(topLeftY)
                 .put(texture.bottomLeftU()).put(texture.bottomLeftV())
-                .put(index)
-                .put(rotationSin).put(rotationCos)
-                .put(pivotX).put(pivotY);
+                .put(texIndex)
+                .put(transformIndex);
 
         this.mappedVertexBuffer
                 .put(topRightX).put(topRightY)
                 .put(texture.bottomRightU()).put(texture.bottomRightV())
-                .put(index)
-                .put(rotationSin).put(rotationCos)
-                .put(pivotX).put(pivotY);
+                .put(texIndex)
+                .put(transformIndex);
     }
 
     public void recordGraphicsCommands(MemoryStack stack, SwapChain swapChain, ResourceManager resourceManager, ViewportScissor viewportScissor, GraphicsPipeline pipeline, int imageIndex, VkClearColorValue clearColorValue, OrthographicCamera camera) {
@@ -112,6 +135,7 @@ public class FrameResources implements AutoCloseable {
         VK14.vkCmdPipelineBarrier2(this.commandBuffer, barrierDependencyInfo);
 
         VK14.vkCmdPushConstants(this.commandBuffer, pipeline.getLayout(), VK14.VK_SHADER_STAGE_VERTEX_BIT, 0, camera.getBuffer());
+        VK14.vkCmdPushConstants(this.commandBuffer, pipeline.getLayout(), VK14.VK_SHADER_STAGE_VERTEX_BIT, Matrix4f.BYTES, stack.longs(this.transformBufferAddress));
 
         VkClearValue clearValue = VkClearValue.calloc(stack).color(clearColorValue);
         VkRenderingAttachmentInfo.Buffer colorAttachments = VkRenderingAttachmentInfo.calloc(1, stack);
@@ -186,6 +210,8 @@ public class FrameResources implements AutoCloseable {
         this.mappedVertexBuffer.clear();
         this.mappedIndexBuffer.clear();
         this.indexOffset = 0;
+        this.mappedTransformBuffer.position(6);
+        this.transformIndex = 1;
     }
 
     @Override
@@ -193,5 +219,6 @@ public class FrameResources implements AutoCloseable {
         this.commandPool.close();
         this.indexBuffer.close();
         this.vertexBuffer.close();
+        this.transformBuffer.close();
     }
 }

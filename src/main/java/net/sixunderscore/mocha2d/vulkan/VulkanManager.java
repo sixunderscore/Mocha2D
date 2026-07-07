@@ -186,7 +186,8 @@ public class VulkanManager {
         VkPhysicalDeviceVulkan12Features vulkan12Features = VkPhysicalDeviceVulkan12Features.calloc(stack)
                 .sType$Default()
                 .shaderSampledImageArrayNonUniformIndexing(true)
-                .runtimeDescriptorArray(true);
+                .runtimeDescriptorArray(true)
+                .bufferDeviceAddress(true);
 
         VkPhysicalDeviceVulkan13Features vulkan13Features = VkPhysicalDeviceVulkan13Features.calloc(stack)
                 .sType$Default()
@@ -220,6 +221,7 @@ public class VulkanManager {
                 .instance(instance)
                 .physicalDevice(physicalDevice)
                 .device(logicalDevice)
+                .flags(Vma.VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT)
                 .pVulkanFunctions(vmaVulkanFunctions);
 
         PointerBuffer allocatorPtr = stack.mallocPointer(1);

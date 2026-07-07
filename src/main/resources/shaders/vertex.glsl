@@ -1,12 +1,24 @@
 #version 460
+#extension GL_EXT_buffer_reference2 : require
+#extension GL_EXT_scalar_block_layout : require
+
+struct TransformData {
+    mat2 transform;
+    vec2 origin;
+};
+
+layout(buffer_reference, scalar) buffer Transforms {
+    TransformData buff[];
+};
+
 layout(location = 0) in vec2 vertexPos;
 layout(location = 1) in vec2 uvCoords;
 layout(location = 2) in float textureIndex;
-layout(location = 3) in vec2 rotationSinAndCos;
-layout(location = 4) in vec2 pivotPos;
+layout(location = 3) in float transformIndex;
 
 layout(push_constant) uniform PushConstants {
     mat4 viewProjection;
+    Transforms transforms;
 } pushConstants;
 
 layout(location = 0) out vec2 fragUvCoords;
@@ -16,12 +28,11 @@ void main() {
     fragUvCoords = uvCoords;
     fragTextureIndex = textureIndex;
 
-    float sin = rotationSinAndCos.x;
-    float cos = rotationSinAndCos.y;
+    TransformData data = pushConstants.transforms.buff[uint(transformIndex)];
 
-    vec2 translated = vertexPos - pivotPos;
-    vec2 rotated = mat2(cos, sin, -sin, cos) * translated;
-    vec2 finalPos = rotated + pivotPos;
+    vec2 translated = vertexPos - data.origin;
+    vec2 transformed = data.transform * translated;
+    vec2 finalPos = transformed + data.origin;
 
     gl_Position = pushConstants.viewProjection * vec4(finalPos, 0.0, 1.0);
 }

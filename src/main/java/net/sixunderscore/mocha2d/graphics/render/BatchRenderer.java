@@ -9,6 +9,7 @@ import net.sixunderscore.mocha2d.util.MathUtils;
 import net.sixunderscore.mocha2d.vulkan.util.*;
 import net.sixunderscore.mocha2d.vulkan.VulkanManager;
 import net.sixunderscore.mocha2d.graphics.OrthographicCamera;
+import org.joml.Matrix2f;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.vulkan.*;
@@ -41,9 +42,10 @@ public class BatchRenderer implements AutoCloseable {
 
             int indexBufferSizeBytes = maxIndices * Short.BYTES;
             int vertexBufferSizeBytes = maxVertices * VertexData.TOTAL_SIZE_BYTES;
+            int transformBufferSizeBytes = maxQuads * (Matrix2f.BYTES + Float.BYTES * 2);
 
             for (int i = 0; i < this.framesInFlight; ++i) {
-                this.frameResources[i] = new FrameResources(stack, indexBufferSizeBytes, vertexBufferSizeBytes);
+                this.frameResources[i] = new FrameResources(stack, indexBufferSizeBytes, vertexBufferSizeBytes, transformBufferSizeBytes);
                 this.imageAvailableSemaphores[i] = SyncUtils.createSemaphore(stack);
                 this.renderFinishedSemaphores[i] = SyncUtils.createSemaphore(stack);
                 this.inFlightFences[i] = SyncUtils.createFence(stack, true);
@@ -61,49 +63,59 @@ public class BatchRenderer implements AutoCloseable {
     }
 
     public void addSprite(TextureRegion texture, float x, float y, float width, float height) {
-        this.addSprite(texture, x, y, width, height, 0, 0, 0);
+        FrameResources frameResources = this.frameResources[this.frameInFlightIndex];
+        float endX = x + width;
+        float endY = y + height;
+
+        frameResources.writeQuadToBuffers(texture, x, y, endX, y, x, endY, endX, endY, 0);
     }
 
     public void addSprite(TextureRegion texture, float x, float y, float width, float height, float rotationRadians, float pivotX, float pivotY) {
         FrameResources frameResources = this.frameResources[this.frameInFlightIndex];
-        float rotationSin = 0;
-        float rotationCos = 1f;
-        if (rotationRadians != 0) {
-            rotationSin = MathUtils.lookupSin(rotationRadians);
-            rotationCos = MathUtils.lookupCos(rotationRadians);
-        }
-
+        float sin = MathUtils.lookupSin(rotationRadians);
+        float cos = MathUtils.lookupCos(rotationRadians);
         float endX = x + width;
         float endY = y + height;
 
-        frameResources.writeQuadToBuffers(
-                texture,
-                x, y,
-                endX, y,
-                x, endY,
-                endX, endY,
-                rotationSin, rotationCos,
-                pivotX, pivotY
-        );
+        int transformIndex = frameResources.writeTransformToBuffer(cos, sin, -sin, cos, pivotX, pivotY);
+        frameResources.writeQuadToBuffers(texture, x, y, endX, y, x, endY, endX, endY, transformIndex);
+    }
+
+    public void addSprite(TextureRegion texture, float x, float y, float width, float height, Matrix2f transform, float transformOriginX, float transformOriginY) {
+        FrameResources frameResources = this.frameResources[this.frameInFlightIndex];
+        float endX = x + width;
+        float endY = y + height;
+
+        int transformIndex = frameResources.writeTransformToBuffer(transform.m00, transform.m10, transform.m01, transform.m11, transformOriginX, transformOriginY);
+        frameResources.writeQuadToBuffers(texture, x, y, endX, y, x, endY, endX, endY, transformIndex);
     }
 
     public void addText(BitmapFont bitmapFont, String text, float x, float y, float charScale) {
-        this.addText(bitmapFont, text, x, y, charScale, 0, 0, 0);
+        this.writeCharsToBuffers(bitmapFont, text, x, y, charScale, 0);
     }
 
     public void addText(BitmapFont bitmapFont, String text, float x, float y, float charScale, float rotationRadians, float pivotX, float pivotY) {
+        FrameResources frameResources = this.frameResources[this.frameInFlightIndex];
+        float sin = MathUtils.lookupSin(rotationRadians);
+        float cos = MathUtils.lookupCos(rotationRadians);
+
+        int transformIndex = frameResources.writeTransformToBuffer(cos, sin, -sin, cos, pivotX, pivotY);
+        this.writeCharsToBuffers(bitmapFont, text, x, y, charScale, transformIndex);
+    }
+
+    public void addText(BitmapFont bitmapFont, String text, float x, float y, float charScale, Matrix2f transform, float transformOriginX, float transformOriginY) {
+        FrameResources frameResources = this.frameResources[this.frameInFlightIndex];
+
+        int transformIndex = frameResources.writeTransformToBuffer(transform.m00, transform.m10, transform.m01, transform.m11, transformOriginX, transformOriginY);
+        this.writeCharsToBuffers(bitmapFont, text, x, y, charScale, transformIndex);
+    }
+
+    private void writeCharsToBuffers(BitmapFont bitmapFont, String text, float x, float y, float charScale, int transformIndex) {
         FrameResources frameResources = this.frameResources[this.frameInFlightIndex];
         float cursorX = x;
         float cursorY = y;
         int strLength = text.length();
         int charResolution = bitmapFont.getCharResolution();
-        float rotationSin = 0;
-        float rotationCos = 1f;
-
-        if (rotationRadians != 0) {
-            rotationSin = MathUtils.lookupSin(rotationRadians);
-            rotationCos = MathUtils.lookupCos(rotationRadians);
-        }
 
         for (int i = 0; i < strLength; ++i) {
             char c = text.charAt(i);
@@ -126,17 +138,7 @@ public class BatchRenderer implements AutoCloseable {
                     float charY = cursorY + glyphData.descent() * charScale;
                     float endCharY = charY + height;
 
-                    frameResources.writeQuadToBuffers(
-                            texture,
-                            charX, charY,
-                            endCharX, charY,
-                            charX, endCharY,
-                            endCharX, endCharY,
-                            rotationSin,
-                            rotationCos,
-                            pivotX,
-                            pivotY
-                    );
+                    frameResources.writeQuadToBuffers(texture, charX, charY, endCharX, charY, charX, endCharY, endCharX, endCharY, transformIndex);
 
                     cursorX += glyphData.advance() * charScale;
                 }
@@ -144,21 +146,39 @@ public class BatchRenderer implements AutoCloseable {
         }
     }
 
-    public void addTexturedQuad(TextureRegion texture,
+    public void addArbitraryQuad(TextureRegion texture,
                                 float bottomLeftX, float bottomLeftY,
                                 float bottomRightX, float bottomRightY,
                                 float topLeftX, float topLeftY,
                                 float topRightX, float topRightY) {
         FrameResources frameResources = this.frameResources[this.frameInFlightIndex];
-        frameResources.writeQuadToBuffers(
-                texture,
-                bottomLeftX, bottomLeftY,
-                bottomRightX, bottomRightY,
-                topLeftX, topLeftY,
-                topRightX, topRightY,
-                0, 1f,
-                0, 0
-        );
+        frameResources.writeQuadToBuffers(texture, bottomLeftX, bottomLeftY, bottomRightX, bottomRightY, topLeftX, topLeftY, topRightX, topRightY, 0);
+    }
+
+    public void addArbitraryQuad(TextureRegion texture,
+                                 float bottomLeftX, float bottomLeftY,
+                                 float bottomRightX, float bottomRightY,
+                                 float topLeftX, float topLeftY,
+                                 float topRightX, float topRightY,
+                                 float rotationRadians, float pivotX, float pivotY) {
+        FrameResources frameResources = this.frameResources[this.frameInFlightIndex];
+        float sin = MathUtils.lookupSin(rotationRadians);
+        float cos = MathUtils.lookupCos(rotationRadians);
+
+        int transformIndex = frameResources.writeTransformToBuffer(cos, sin, -sin, cos, pivotX, pivotY);
+        frameResources.writeQuadToBuffers(texture, bottomLeftX, bottomLeftY, bottomRightX, bottomRightY, topLeftX, topLeftY, topRightX, topRightY, transformIndex);
+    }
+
+    public void addArbitraryQuad(TextureRegion texture,
+                                 float bottomLeftX, float bottomLeftY,
+                                 float bottomRightX, float bottomRightY,
+                                 float topLeftX, float topLeftY,
+                                 float topRightX, float topRightY,
+                                 Matrix2f transform, float transformOriginX, float transformOriginY) {
+        FrameResources frameResources = this.frameResources[this.frameInFlightIndex];
+
+        int transformIndex = frameResources.writeTransformToBuffer(transform.m00, transform.m10, transform.m01, transform.m11, transformOriginX, transformOriginY);
+        frameResources.writeQuadToBuffers(texture, bottomLeftX, bottomLeftY, bottomRightX, bottomRightY, topLeftX, topLeftY, topRightX, topRightY, transformIndex);
     }
 
     public void draw(OrthographicCamera camera, SwapChain swapChain, ResourceManager resourceManager, ViewportScissor viewportScissor) {
