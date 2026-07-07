@@ -69,13 +69,13 @@ public class FrameResources implements AutoCloseable {
         // ---- Writing index data for quad ----
 
         this.mappedIndexBuffer
-                .put((short) this.indexOffset)        // Top-left
-                .put((short) (this.indexOffset + 1))  // Top-right
-                .put((short) (this.indexOffset + 2))  // Bottom-left
+                .put((short) this.indexOffset)
+                .put((short) (this.indexOffset + 1))
+                .put((short) (this.indexOffset + 2))
 
-                .put((short) (this.indexOffset + 1))  // Top-right
-                .put((short) (this.indexOffset + 3))  // Bottom-right
-                .put((short) (this.indexOffset + 2)); // Bottom-left
+                .put((short) (this.indexOffset + 1))
+                .put((short) (this.indexOffset + 3))
+                .put((short) (this.indexOffset + 2));
 
         this.indexOffset += 4;
 
