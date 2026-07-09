@@ -9,7 +9,6 @@ import net.sixunderscore.mocha2d.util.MathUtils;
 import net.sixunderscore.mocha2d.vulkan.util.*;
 import net.sixunderscore.mocha2d.vulkan.VulkanManager;
 import net.sixunderscore.mocha2d.graphics.OrthographicCamera;
-import org.joml.Matrix2f;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.vulkan.*;
@@ -36,16 +35,8 @@ public class BatchRenderer implements AutoCloseable {
         this.inFlightFences = new long[this.framesInFlight];
 
         try (MemoryStack stack = MemoryStack.stackPush()) {
-            int maxQuads = 0xFFFF / 4; // Unsigned short max value divided by 4 vertices in a quad
-            int maxIndices = maxQuads * 6; // 6 indices in a quad (two triangles)
-            int maxVertices = maxQuads * 4; // 4 vertices in a quad
-
-            int indexBufferSizeBytes = maxIndices * Short.BYTES;
-            int vertexBufferSizeBytes = maxVertices * VertexData.TOTAL_SIZE_BYTES;
-            int transformBufferSizeBytes = maxQuads * (Matrix2f.BYTES + Float.BYTES * 2);
-
             for (int i = 0; i < this.framesInFlight; ++i) {
-                this.frameResources[i] = new FrameResources(stack, indexBufferSizeBytes, vertexBufferSizeBytes, transformBufferSizeBytes);
+                this.frameResources[i] = new FrameResources(stack);
                 this.imageAvailableSemaphores[i] = SyncUtils.createSemaphore(stack);
                 this.renderFinishedSemaphores[i] = SyncUtils.createSemaphore(stack);
                 this.inFlightFences[i] = SyncUtils.createFence(stack, true);

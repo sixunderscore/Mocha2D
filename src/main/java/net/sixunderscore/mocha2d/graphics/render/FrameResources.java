@@ -5,6 +5,7 @@ import net.sixunderscore.mocha2d.graphics.OrthographicCamera;
 import net.sixunderscore.mocha2d.graphics.resources.textures.TextureRegion;
 import net.sixunderscore.mocha2d.vulkan.VulkanManager;
 import net.sixunderscore.mocha2d.vulkan.util.*;
+import org.joml.Matrix2f;
 import org.joml.Matrix4f;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.util.vma.Vma;
@@ -26,7 +27,15 @@ public class FrameResources implements AutoCloseable {
     private int transformIndex;
     private final long transformBufferAddress;
 
-    public FrameResources(MemoryStack stack, int indexBufferSizeBytes, int vertexBufferSizeBytes, int transformBufferSizeBytes) {
+    public FrameResources(MemoryStack stack) {
+        int maxQuads = 0xFFFF / 4; // Unsigned short max value divided by 4 vertices in a quad
+        int maxIndices = maxQuads * 6; // 6 indices in a quad (two triangles)
+        int maxVertices = maxQuads * 4; // 4 vertices in a quad
+
+        int indexBufferSizeBytes = maxIndices * Short.BYTES;
+        int vertexBufferSizeBytes = maxVertices * VertexData.TOTAL_SIZE_BYTES;
+        int transformBufferSizeBytes = maxQuads * (Matrix2f.BYTES + Float.BYTES * 2);
+
         this.commandPool = new CommandPool(stack, VulkanManager.getGraphicsQueueIndex(), VK14.VK_COMMAND_POOL_CREATE_TRANSIENT_BIT);
         this.commandBuffer = this.commandPool.allocateCommandBuffer(stack);
 
