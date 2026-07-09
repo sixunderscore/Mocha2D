@@ -11,48 +11,49 @@ import org.lwjgl.system.MemoryStack;
 import org.lwjgl.util.vma.Vma;
 import org.lwjgl.vulkan.*;
 
-import java.nio.FloatBuffer;
-import java.nio.ShortBuffer;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.ValueLayout;
 
 public class FrameResources implements AutoCloseable {
     private final CommandPool commandPool;
     private final VkCommandBuffer commandBuffer;
     private final GpuBuffer indexBuffer;
-    private final ShortBuffer mappedIndexBuffer;
+    private final MemorySegment mappedIndexBuffer;
+    private int indexWriteOffset;
     private int indexOffset;
     private final GpuBuffer vertexBuffer;
-    private final FloatBuffer mappedVertexBuffer;
+    private final MemorySegment mappedVertexBuffer;
+    private int vertexWriteOffset;
     private final GpuBuffer transformBuffer;
-    private final FloatBuffer mappedTransformBuffer;
+    private final MemorySegment mappedTransformBuffer;
+    private int transformWriteOffset;
     private int transformIndex;
     private final long transformBufferAddress;
 
     public FrameResources(MemoryStack stack) {
-        int maxQuads = 0xFFFF / 4; // Unsigned short max value divided by 4 vertices in a quad
-        int maxIndices = maxQuads * 6; // 6 indices in a quad (two triangles)
-        int maxVertices = maxQuads * 4; // 4 vertices in a quad
+        final int maxQuads = 0xFFFF / 4; // Unsigned short max value divided by 4 vertices in a quad
+        final int maxIndices = maxQuads * 6; // 6 indices in a quad (two triangles)
+        final int maxVertices = maxQuads * 4; // 4 vertices in a quad
 
-        int indexBufferSizeBytes = maxIndices * Short.BYTES;
-        int vertexBufferSizeBytes = maxVertices * VertexData.TOTAL_SIZE_BYTES;
-        int transformBufferSizeBytes = maxQuads * (Matrix2f.BYTES + Float.BYTES * 2);
+        final int indexBufferSizeBytes = maxIndices * Short.BYTES;
+        final int vertexBufferSizeBytes = maxVertices * VertexData.TOTAL_SIZE_BYTES;
+        final int transformBufferSizeBytes = maxQuads * (Matrix2f.BYTES + Float.BYTES * 2);
 
         this.commandPool = new CommandPool(stack, VulkanManager.getGraphicsQueueIndex(), VK14.VK_COMMAND_POOL_CREATE_TRANSIENT_BIT);
         this.commandBuffer = this.commandPool.allocateCommandBuffer(stack);
 
         this.indexBuffer = new GpuBuffer(stack, indexBufferSizeBytes, VK14.VK_BUFFER_USAGE_INDEX_BUFFER_BIT, Vma.VMA_MEMORY_USAGE_CPU_TO_GPU);
-        this.mappedIndexBuffer = this.indexBuffer.map(stack).asShortBuffer();
+        this.mappedIndexBuffer = MemorySegment.ofAddress(this.indexBuffer.map(stack)).reinterpret(indexBufferSizeBytes);
         this.indexOffset = 0;
 
         this.vertexBuffer = new GpuBuffer(stack, vertexBufferSizeBytes, VK14.VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, Vma.VMA_MEMORY_USAGE_CPU_TO_GPU);
-        this.mappedVertexBuffer = this.vertexBuffer.map(stack).asFloatBuffer();
+        this.mappedVertexBuffer = MemorySegment.ofAddress(this.vertexBuffer.map(stack)).reinterpret(vertexBufferSizeBytes);
 
         this.transformBuffer = new GpuBuffer(stack, transformBufferSizeBytes, VK14.VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, Vma.VMA_MEMORY_USAGE_CPU_TO_GPU);
-        this.mappedTransformBuffer = this.transformBuffer.map(stack).asFloatBuffer();
-        this.mappedTransformBuffer
-                .put(1f).put(0)
-                .put(0).put(1f);
-        this.mappedTransformBuffer.put(0).put(0);
-        this.transformIndex = 1;
+        this.mappedTransformBuffer = MemorySegment.ofAddress(this.transformBuffer.map(stack)).reinterpret(transformBufferSizeBytes);
+        this.transformIndex = 0;
+
+        this.writeTransformToBuffer(1f, 0, 0, 1f, 0, 0);
 
         VkBufferDeviceAddressInfo bufferDeviceAddressInfo = VkBufferDeviceAddressInfo.calloc(stack)
                 .sType$Default()
@@ -61,10 +62,17 @@ public class FrameResources implements AutoCloseable {
     }
 
     public int writeTransformToBuffer(float m00, float m10, float m01, float m11, float originX, float originY) {
-        this.mappedTransformBuffer
-                .put(m00).put(m10)
-                .put(m01).put(m11);
-        this.mappedTransformBuffer.put(originX).put(originY);
+        int offset = this.transformWriteOffset;
+        MemorySegment transformSeg = this.mappedTransformBuffer;
+
+        transformSeg.set(ValueLayout.JAVA_FLOAT, offset,      m00);
+        transformSeg.set(ValueLayout.JAVA_FLOAT, offset + 4,  m10);
+        transformSeg.set(ValueLayout.JAVA_FLOAT, offset + 8,  m01);
+        transformSeg.set(ValueLayout.JAVA_FLOAT, offset + 12, m11);
+        transformSeg.set(ValueLayout.JAVA_FLOAT, offset + 16, originX);
+        transformSeg.set(ValueLayout.JAVA_FLOAT, offset + 20, originY);
+
+        this.transformWriteOffset = offset + (6 * Float.BYTES);
 
         return this.transformIndex++;
     }
@@ -76,45 +84,53 @@ public class FrameResources implements AutoCloseable {
                                    float topRightX, float topRightY,
                                    int transformIndex) {
         // ---- Writing index data for quad ----
+        MemorySegment indexSeg = this.mappedIndexBuffer;
+        int idxWriteOffset = this.indexWriteOffset;
+        short currentBase = (short) this.indexOffset;
 
-        this.mappedIndexBuffer
-                .put((short) this.indexOffset)
-                .put((short) (this.indexOffset + 1))
-                .put((short) (this.indexOffset + 2))
-
-                .put((short) (this.indexOffset + 1))
-                .put((short) (this.indexOffset + 3))
-                .put((short) (this.indexOffset + 2));
+        indexSeg.set(ValueLayout.JAVA_SHORT, idxWriteOffset, currentBase);
+        indexSeg.set(ValueLayout.JAVA_SHORT, idxWriteOffset + 2, (short)(currentBase + 1));
+        indexSeg.set(ValueLayout.JAVA_SHORT, idxWriteOffset + 4, (short)(currentBase + 2));
+        indexSeg.set(ValueLayout.JAVA_SHORT, idxWriteOffset + 6, (short)(currentBase + 1));
+        indexSeg.set(ValueLayout.JAVA_SHORT, idxWriteOffset + 8, (short)(currentBase + 3));
+        indexSeg.set(ValueLayout.JAVA_SHORT, idxWriteOffset + 10, (short)(currentBase + 2));
 
         this.indexOffset += 4;
+        this.indexWriteOffset = idxWriteOffset + (6 * Short.BYTES);
 
         // ---- Writing vertex data for quad ----
-
+        int vtxWriteOffset = this.vertexWriteOffset;
         int texIndex = texture.imageIndex();
 
-        this.mappedVertexBuffer
-                .put(bottomLeftX).put(bottomLeftY)
-                .put(texture.topLeftU()).put(texture.topLeftV())
-                .put(texIndex)
-                .put(transformIndex);
+        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, vtxWriteOffset, bottomLeftX);
+        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, vtxWriteOffset + 4, bottomLeftY);
+        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, vtxWriteOffset + 8, texture.topLeftU());
+        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, vtxWriteOffset + 12, texture.topLeftV());
+        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, vtxWriteOffset + 16, texIndex);
+        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, vtxWriteOffset + 20, transformIndex);
 
-        this.mappedVertexBuffer
-                .put(bottomRightX).put(bottomRightY)
-                .put(texture.topRightU()).put(texture.topRightV())
-                .put(texIndex)
-                .put(transformIndex);
+        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, vtxWriteOffset + 24, bottomRightX);
+        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, vtxWriteOffset + 28, bottomRightY);
+        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, vtxWriteOffset + 32, texture.topRightU());
+        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, vtxWriteOffset + 36, texture.topRightV());
+        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, vtxWriteOffset + 40, texIndex);
+        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, vtxWriteOffset + 44, transformIndex);
 
-        this.mappedVertexBuffer
-                .put(topLeftX).put(topLeftY)
-                .put(texture.bottomLeftU()).put(texture.bottomLeftV())
-                .put(texIndex)
-                .put(transformIndex);
+        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, vtxWriteOffset + 48, topLeftX);
+        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, vtxWriteOffset + 52, topLeftY);
+        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, vtxWriteOffset + 56, texture.bottomLeftU());
+        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, vtxWriteOffset + 60, texture.bottomLeftV());
+        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, vtxWriteOffset + 64, texIndex);
+        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, vtxWriteOffset + 68, transformIndex);
 
-        this.mappedVertexBuffer
-                .put(topRightX).put(topRightY)
-                .put(texture.bottomRightU()).put(texture.bottomRightV())
-                .put(texIndex)
-                .put(transformIndex);
+        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, vtxWriteOffset + 72, topRightX);
+        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, vtxWriteOffset + 76, topRightY);
+        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, vtxWriteOffset + 80, texture.bottomRightU());
+        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, vtxWriteOffset + 84, texture.bottomRightV());
+        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, vtxWriteOffset + 88, texIndex);
+        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, vtxWriteOffset + 92, transformIndex);
+
+        this.vertexWriteOffset = vtxWriteOffset + (24 * Float.BYTES);
     }
 
     public void recordGraphicsCommands(MemoryStack stack, SwapChain swapChain, ResourceManager resourceManager, ViewportScissor viewportScissor, GraphicsPipeline pipeline, int imageIndex, VkClearColorValue clearColorValue, OrthographicCamera camera) {
@@ -169,8 +185,7 @@ public class FrameResources implements AutoCloseable {
         VK14.vkCmdBindVertexBuffers(this.commandBuffer, 0, stack.mallocLong(1).put(0, this.vertexBuffer.getBuffer()), stack.mallocLong(1).put(0, 0));
         VK14.vkCmdBindIndexBuffer(this.commandBuffer, this.indexBuffer.getBuffer(), 0, VK14.VK_INDEX_TYPE_UINT16);
 
-        int indexCount = this.mappedIndexBuffer.position();
-        VK14.vkCmdDrawIndexed(this.commandBuffer, indexCount, 1, 0, 0, 0);
+        VK14.vkCmdDrawIndexed(this.commandBuffer, this.indexWriteOffset / Short.BYTES, 1, 0, 0, 0);
 
         VK14.vkCmdEndRendering(this.commandBuffer);
 
@@ -216,10 +231,10 @@ public class FrameResources implements AutoCloseable {
     }
 
     public void reset() {
-        this.mappedVertexBuffer.clear();
-        this.mappedIndexBuffer.clear();
+        this.vertexWriteOffset = 0;
+        this.indexWriteOffset = 0;
         this.indexOffset = 0;
-        this.mappedTransformBuffer.position(6);
+        this.transformWriteOffset = Matrix2f.BYTES + Float.BYTES * 2;
         this.transformIndex = 1;
     }
 

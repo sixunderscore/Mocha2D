@@ -64,7 +64,7 @@ public class VulkanManager {
                 .sType$Default()
                 .pApplicationInfo(applicationInfo)
                 .ppEnabledExtensionNames(glfwExtensions);
-         #end-release */
+        #end-release */
 
         PointerBuffer instancePtr = stack.mallocPointer(1);
         if (VK14.vkCreateInstance(instanceCreateInfo, null, instancePtr) != VK14.VK_SUCCESS) {

@@ -8,13 +8,11 @@ import org.lwjgl.util.vma.VmaAllocationCreateInfo;
 import org.lwjgl.vulkan.VK14;
 import org.lwjgl.vulkan.VkBufferCreateInfo;
 
-import java.nio.ByteBuffer;
 import java.nio.LongBuffer;
 
 public class GpuBuffer implements AutoCloseable {
     private final long buffer;
     private final long allocation;
-    private final long sizeBytes;
     private boolean isMapped;
 
     public GpuBuffer(MemoryStack stack, long sizeBytes, int usage, int memoryUsage) {
@@ -35,11 +33,10 @@ public class GpuBuffer implements AutoCloseable {
 
         this.buffer = bufferPtr.get(0);
         this.allocation = allocationPtr.get(0);
-        this.sizeBytes = sizeBytes;
         this.isMapped = false;
     }
 
-    public ByteBuffer map(MemoryStack stack) {
+    public long map(MemoryStack stack) {
         if (this.isMapped) {
             throw new IllegalStateException("Buffer can only be mapped once");
         }
@@ -48,7 +45,7 @@ public class GpuBuffer implements AutoCloseable {
         Vma.vmaMapMemory(VulkanManager.getAllocator(), this.allocation, mappedBufferPtr);
         this.isMapped = true;
 
-        return mappedBufferPtr.getByteBuffer(0, (int) this.sizeBytes);
+        return mappedBufferPtr.get();
     }
 
     public long getBuffer() {

@@ -54,7 +54,7 @@ public class ResourceUtils {
     public static GpuBuffer createStagingImageBuffer(MemoryStack stack, TextureData textureData) {
         int imageBufferSizeBytes = (textureData.width() * textureData.height()) * 4;
         GpuBuffer stagingImageBuffer = new GpuBuffer(stack, imageBufferSizeBytes, VK14.VK_BUFFER_USAGE_TRANSFER_SRC_BIT, Vma.VMA_MEMORY_USAGE_CPU_TO_GPU);
-        ByteBuffer mappedStagingImageBuffer = stagingImageBuffer.map(stack);
+        ByteBuffer mappedStagingImageBuffer = MemoryUtil.memByteBuffer(stagingImageBuffer.map(stack), imageBufferSizeBytes);
         mappedStagingImageBuffer.clear().put(textureData.data());
 
         return stagingImageBuffer;
