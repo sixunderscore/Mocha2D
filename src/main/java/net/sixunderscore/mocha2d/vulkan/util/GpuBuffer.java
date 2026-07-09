@@ -45,7 +45,7 @@ public class GpuBuffer implements AutoCloseable {
         Vma.vmaMapMemory(VulkanManager.getAllocator(), this.allocation, mappedBufferPtr);
         this.isMapped = true;
 
-        return mappedBufferPtr.get();
+        return mappedBufferPtr.get(0);
     }
 
     public long getBuffer() {
