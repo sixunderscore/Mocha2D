@@ -30,8 +30,7 @@ void main() {
 
     TransformData data = pushConstants.transforms.buff[uint(transformIndex)];
 
-    vec2 translated = vertexPos - data.origin;
-    vec2 transformed = data.transform * translated;
+    vec2 transformed = data.transform * (vertexPos - data.origin);
     vec2 finalPos = transformed + data.origin;
 
     gl_Position = pushConstants.viewProjection * vec4(finalPos, 0.0, 1.0);
