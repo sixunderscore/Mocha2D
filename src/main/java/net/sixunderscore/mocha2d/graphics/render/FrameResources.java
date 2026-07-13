@@ -62,17 +62,14 @@ public class FrameResources implements AutoCloseable {
     }
 
     public int writeTransformToBuffer(float m00, float m10, float m01, float m11, float originX, float originY) {
-        int offset = this.transformWriteOffset;
-        MemorySegment transformSeg = this.mappedTransformBuffer;
+        this.mappedTransformBuffer.set(ValueLayout.JAVA_FLOAT, this.transformWriteOffset, m00);
+        this.mappedTransformBuffer.set(ValueLayout.JAVA_FLOAT, this.transformWriteOffset + 4,  m10);
+        this.mappedTransformBuffer.set(ValueLayout.JAVA_FLOAT, this.transformWriteOffset + 8,  m01);
+        this.mappedTransformBuffer.set(ValueLayout.JAVA_FLOAT, this.transformWriteOffset + 12, m11);
+        this.mappedTransformBuffer.set(ValueLayout.JAVA_FLOAT, this.transformWriteOffset + 16, originX);
+        this.mappedTransformBuffer.set(ValueLayout.JAVA_FLOAT, this.transformWriteOffset + 20, originY);
 
-        transformSeg.set(ValueLayout.JAVA_FLOAT, offset,      m00);
-        transformSeg.set(ValueLayout.JAVA_FLOAT, offset + 4,  m10);
-        transformSeg.set(ValueLayout.JAVA_FLOAT, offset + 8,  m01);
-        transformSeg.set(ValueLayout.JAVA_FLOAT, offset + 12, m11);
-        transformSeg.set(ValueLayout.JAVA_FLOAT, offset + 16, originX);
-        transformSeg.set(ValueLayout.JAVA_FLOAT, offset + 20, originY);
-
-        this.transformWriteOffset = offset + (6 * Float.BYTES);
+        this.transformWriteOffset += (6 * Float.BYTES);
 
         return this.transformIndex++;
     }
@@ -84,53 +81,50 @@ public class FrameResources implements AutoCloseable {
                                    float topRightX, float topRightY,
                                    int transformIndex) {
         // ---- Writing index data for quad ----
-        MemorySegment indexSeg = this.mappedIndexBuffer;
-        int idxWriteOffset = this.indexWriteOffset;
         short currentBase = (short) this.indexOffset;
 
-        indexSeg.set(ValueLayout.JAVA_SHORT, idxWriteOffset, currentBase);
-        indexSeg.set(ValueLayout.JAVA_SHORT, idxWriteOffset + 2, (short)(currentBase + 1));
-        indexSeg.set(ValueLayout.JAVA_SHORT, idxWriteOffset + 4, (short)(currentBase + 2));
-        indexSeg.set(ValueLayout.JAVA_SHORT, idxWriteOffset + 6, (short)(currentBase + 1));
-        indexSeg.set(ValueLayout.JAVA_SHORT, idxWriteOffset + 8, (short)(currentBase + 3));
-        indexSeg.set(ValueLayout.JAVA_SHORT, idxWriteOffset + 10, (short)(currentBase + 2));
+        this.mappedIndexBuffer.set(ValueLayout.JAVA_SHORT, this.indexWriteOffset, currentBase);
+        this.mappedIndexBuffer.set(ValueLayout.JAVA_SHORT, this.indexWriteOffset + 2, (short) (currentBase + 1));
+        this.mappedIndexBuffer.set(ValueLayout.JAVA_SHORT, this.indexWriteOffset + 4, (short) (currentBase + 2));
+        this.mappedIndexBuffer.set(ValueLayout.JAVA_SHORT, this.indexWriteOffset + 6, (short) (currentBase + 1));
+        this.mappedIndexBuffer.set(ValueLayout.JAVA_SHORT, this.indexWriteOffset + 8, (short) (currentBase + 3));
+        this.mappedIndexBuffer.set(ValueLayout.JAVA_SHORT, this.indexWriteOffset + 10, (short) (currentBase + 2));
 
+        this.indexWriteOffset += (6 * Short.BYTES);
         this.indexOffset += 4;
-        this.indexWriteOffset = idxWriteOffset + (6 * Short.BYTES);
 
         // ---- Writing vertex data for quad ----
-        int vtxWriteOffset = this.vertexWriteOffset;
         int texIndex = texture.imageIndex();
 
-        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, vtxWriteOffset, bottomLeftX);
-        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, vtxWriteOffset + 4, bottomLeftY);
-        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, vtxWriteOffset + 8, texture.topLeftU());
-        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, vtxWriteOffset + 12, texture.topLeftV());
-        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, vtxWriteOffset + 16, texIndex);
-        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, vtxWriteOffset + 20, transformIndex);
+        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, this.vertexWriteOffset, bottomLeftX);
+        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, this.vertexWriteOffset + 4, bottomLeftY);
+        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, this.vertexWriteOffset + 8, texture.topLeftU());
+        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, this.vertexWriteOffset + 12, texture.topLeftV());
+        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, this.vertexWriteOffset + 16, texIndex);
+        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, this.vertexWriteOffset + 20, transformIndex);
 
-        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, vtxWriteOffset + 24, bottomRightX);
-        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, vtxWriteOffset + 28, bottomRightY);
-        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, vtxWriteOffset + 32, texture.topRightU());
-        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, vtxWriteOffset + 36, texture.topRightV());
-        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, vtxWriteOffset + 40, texIndex);
-        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, vtxWriteOffset + 44, transformIndex);
+        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, this.vertexWriteOffset + 24, bottomRightX);
+        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, this.vertexWriteOffset + 28, bottomRightY);
+        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, this.vertexWriteOffset + 32, texture.topRightU());
+        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, this.vertexWriteOffset + 36, texture.topRightV());
+        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, this.vertexWriteOffset + 40, texIndex);
+        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, this.vertexWriteOffset + 44, transformIndex);
 
-        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, vtxWriteOffset + 48, topLeftX);
-        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, vtxWriteOffset + 52, topLeftY);
-        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, vtxWriteOffset + 56, texture.bottomLeftU());
-        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, vtxWriteOffset + 60, texture.bottomLeftV());
-        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, vtxWriteOffset + 64, texIndex);
-        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, vtxWriteOffset + 68, transformIndex);
+        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, this.vertexWriteOffset + 48, topLeftX);
+        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, this.vertexWriteOffset + 52, topLeftY);
+        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, this.vertexWriteOffset + 56, texture.bottomLeftU());
+        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, this.vertexWriteOffset + 60, texture.bottomLeftV());
+        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, this.vertexWriteOffset + 64, texIndex);
+        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, this.vertexWriteOffset + 68, transformIndex);
 
-        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, vtxWriteOffset + 72, topRightX);
-        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, vtxWriteOffset + 76, topRightY);
-        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, vtxWriteOffset + 80, texture.bottomRightU());
-        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, vtxWriteOffset + 84, texture.bottomRightV());
-        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, vtxWriteOffset + 88, texIndex);
-        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, vtxWriteOffset + 92, transformIndex);
+        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, this.vertexWriteOffset + 72, topRightX);
+        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, this.vertexWriteOffset + 76, topRightY);
+        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, this.vertexWriteOffset + 80, texture.bottomRightU());
+        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, this.vertexWriteOffset + 84, texture.bottomRightV());
+        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, this.vertexWriteOffset + 88, texIndex);
+        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, this.vertexWriteOffset + 92, transformIndex);
 
-        this.vertexWriteOffset = vtxWriteOffset + (24 * Float.BYTES);
+        this.vertexWriteOffset += (24 * Float.BYTES);
     }
 
     public void recordGraphicsCommands(MemoryStack stack, SwapChain swapChain, ResourceManager resourceManager, ViewportScissor viewportScissor, GraphicsPipeline pipeline, int imageIndex, VkClearColorValue clearColorValue, OrthographicCamera camera) {
