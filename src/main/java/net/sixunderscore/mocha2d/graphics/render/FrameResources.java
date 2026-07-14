@@ -232,10 +232,10 @@ public class FrameResources implements AutoCloseable {
         VK14.vkCmdBeginRendering(this.commandBuffer, renderingInfo);
 
         VK14.vkCmdBindPipeline(this.commandBuffer, VK14.VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.getPipeline());
-        VK14.vkCmdBindDescriptorSets(this.commandBuffer, VK14.VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.getLayout(), 0, stack.mallocLong(1).put(0, resourceManager.getDescriptorSet()), null);
+        VK14.vkCmdBindDescriptorSets(this.commandBuffer, VK14.VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.getLayout(), 0, stack.longs(resourceManager.getDescriptorSet()), null);
         VK14.vkCmdSetViewport(this.commandBuffer, 0, viewportScissor.getViewport());
         VK14.vkCmdSetScissor(this.commandBuffer, 0, viewportScissor.getScissor());
-        VK14.vkCmdBindVertexBuffers(this.commandBuffer, 0, stack.mallocLong(1).put(0, this.vertexBuffer.getBuffer()), stack.mallocLong(1).put(0, 0));
+        VK14.vkCmdBindVertexBuffers(this.commandBuffer, 0, stack.longs(this.vertexBuffer.getBuffer()), stack.longs(0));
         VK14.vkCmdBindIndexBuffer(this.commandBuffer, this.indexBuffer.getBuffer(), 0, VK14.VK_INDEX_TYPE_UINT16);
 
         VK14.vkCmdDrawIndexed(this.commandBuffer, this.indexWriteOffset / Short.BYTES, 1, 0, 0, 0);

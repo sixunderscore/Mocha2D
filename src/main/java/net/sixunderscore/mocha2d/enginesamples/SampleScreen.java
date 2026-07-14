@@ -44,11 +44,12 @@ public class SampleScreen implements Screen {
         }
 
         float rad = MathUtils.lerp(0, MathUtils.PI_TIMES_2, this.t);
-        float scale = MathUtils.lookupSin(rad);
+        float sin = MathUtils.lookupSin(rad);
 
-        int transformIndex = batch.addScalingRotationTransform(scale, scale, rad, Window.getWidth() / 2f, Window.getHeight() / 2f);
+        int transformIndex = batch.addScalingRotationTransform(sin, sin, rad, Window.getWidth() / 2f, Window.getHeight() / 2f);
+        int tintIndex = batch.addTint((byte) 255, (byte) 0, (byte) 0, Math.abs(sin));
 
         batch.addSprite(this.logoTexture, Window.getWidth() / 2f - 150, Window.getHeight() / 2f - 150, 300, 300, transformIndex);
-        batch.addText(this.bitmapFont, "FPS: " + Window.getFpsCount(), 10, Window.getHeight() - 50, 1.1f);
+        batch.addText(this.bitmapFont, "FPS: " + Window.getFpsCount(), 10, Window.getHeight() - 50, 1.1f, BatchRenderer.NO_TRANSFORM, tintIndex);
     }
 }
