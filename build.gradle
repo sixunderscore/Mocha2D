@@ -5,7 +5,7 @@ plugins {
 group = 'net.sixunderscore.mocha2d'
 version = 'dev'
 
-project.ext.lwjglVersion = "3.4.1"
+project.ext.lwjglVersion = "3.4.2"
 project.ext.jomlVersion = "1.10.9"
 
 project.ext.lwjglNatives = [
@@ -49,6 +49,7 @@ tasks.build {
 tasks.withType(JavaExec).configureEach {
     jvmArgs += [
             '--enable-native-access=ALL-UNNAMED',
-            '-Djoml.nounsafe=true'
+            '-Djoml.nounsafe=true',
+            '--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED'
     ]
 }
