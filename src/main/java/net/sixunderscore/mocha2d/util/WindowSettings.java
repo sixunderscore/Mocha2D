@@ -12,7 +12,7 @@ public class WindowSettings {
     private int initialHeight;
     private boolean resizeable;
     private int fpsCap;
-    private Color clearColor;
+    private final byte[] clearColor;
 
     public WindowSettings() {
         this.textureFiles = new TextureFile[0];
@@ -23,7 +23,7 @@ public class WindowSettings {
         this.initialHeight = 500;
         this.resizeable = true;
         this.fpsCap = 1000;
-        this.clearColor = new Color((byte) 0, (byte) 0, (byte) 0);
+        this.clearColor = new byte[]{(byte) 0, (byte) 0, (byte) 0};
     }
 
     public void setTextureFiles(TextureFile... textureFiles) {
@@ -55,8 +55,10 @@ public class WindowSettings {
         this.fpsCap = fpsCap;
     }
 
-    public void setClearColor(Color color) {
-        this.clearColor = color;
+    public void setClearColor(byte r, byte g, byte b) {
+        this.clearColor[0] = r;
+        this.clearColor[1] = g;
+        this.clearColor[2] = b;
     }
 
     public String getWindowName() {
@@ -91,7 +93,7 @@ public class WindowSettings {
         return this.ttfFiles;
     }
 
-    public Color getClearColor() {
+    public byte[] getClearColor() {
         return this.clearColor;
     }
 }

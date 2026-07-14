@@ -97,7 +97,10 @@ public class Window {
 
         inputCallbackManager = new InputCallbackManager(window, screen);
         camera = new OrthographicCamera();
-        batch = new BatchRenderer(resourceManager, swapChain, settings.getClearColor());
+        batch = new BatchRenderer(resourceManager, swapChain);
+        byte[] clearColor = settings.getClearColor();
+        setClearColor(clearColor[0], clearColor[1], clearColor[2]);
+
         fpsHelper = new FpsHelper(settings.getFpsCap());
         deltaTime = new DeltaTime();
 
@@ -142,8 +145,8 @@ public class Window {
         inputCallbackManager.setCallbacks(window, screen);
     }
 
-    public static void setClearColor(Color color) {
-        batch.setClearColor(color);
+    public static void setClearColor(byte r, byte g, byte b) {
+        batch.setClearColor(r, g, b);
     }
 
     public static void setFpsCap(int fpsCap) {

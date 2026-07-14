@@ -21,9 +21,9 @@ public class GraphicsPipeline implements AutoCloseable {
     }
 
     private long createPipelineLayout(MemoryStack stack, ResourceManager resourceManager) {
-        // Pass combined view + projection matrix as push constant
-        VkPushConstantRange.Buffer pushConstantRanges = VkPushConstantRange.calloc(1, stack);
+        VkPushConstantRange.Buffer pushConstantRanges = VkPushConstantRange.calloc(2, stack);
         pushConstantRanges.get(0).set(VK14.VK_SHADER_STAGE_VERTEX_BIT, 0, Matrix4f.BYTES + 8);
+        pushConstantRanges.get(1).set(VK14.VK_SHADER_STAGE_FRAGMENT_BIT, Matrix4f.BYTES + 8, 8);
 
         VkPipelineLayoutCreateInfo layoutCreateInfo = VkPipelineLayoutCreateInfo.calloc(stack)
                 .sType$Default()
@@ -60,11 +60,12 @@ public class GraphicsPipeline implements AutoCloseable {
         vertexBindingDescriptions.get(0).set(0, VertexData.TOTAL_SIZE_BYTES, VK14.VK_VERTEX_INPUT_RATE_VERTEX);
 
         // How to interpret total vertex buffer data
-        VkVertexInputAttributeDescription.Buffer vertexAttributeDescriptions = VkVertexInputAttributeDescription.malloc(4, stack);
+        VkVertexInputAttributeDescription.Buffer vertexAttributeDescriptions = VkVertexInputAttributeDescription.malloc(5, stack);
         vertexAttributeDescriptions.get(0).set(0, 0, VK14.VK_FORMAT_R32G32_SFLOAT, 0);
         vertexAttributeDescriptions.get(1).set(1, 0, VK14.VK_FORMAT_R32G32_SFLOAT, VertexData.POS_SIZE_BYTES);
         vertexAttributeDescriptions.get(2).set(2, 0, VK14.VK_FORMAT_R32_SFLOAT, VertexData.POS_SIZE_BYTES + VertexData.UV_SIZE_BYTES);
         vertexAttributeDescriptions.get(3).set(3, 0, VK14.VK_FORMAT_R32_SFLOAT, VertexData.POS_SIZE_BYTES + VertexData.UV_SIZE_BYTES + VertexData.TEX_INDEX_SIZE_BYTES);
+        vertexAttributeDescriptions.get(4).set(4, 0, VK14.VK_FORMAT_R32_SFLOAT, VertexData.POS_SIZE_BYTES + VertexData.UV_SIZE_BYTES + VertexData.TEX_INDEX_SIZE_BYTES + VertexData.TRANSFORM_INDEX_SIZE_BYTES);
 
         VkPipelineVertexInputStateCreateInfo vertexInputStateCreateInfo = VkPipelineVertexInputStateCreateInfo.calloc(stack)
                 .pVertexBindingDescriptions(vertexBindingDescriptions)

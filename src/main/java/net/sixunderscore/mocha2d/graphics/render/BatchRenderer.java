@@ -4,7 +4,7 @@ import net.sixunderscore.mocha2d.graphics.resources.ResourceManager;
 import net.sixunderscore.mocha2d.graphics.resources.text.BitmapFont;
 import net.sixunderscore.mocha2d.graphics.resources.text.GlyphData;
 import net.sixunderscore.mocha2d.graphics.resources.textures.TextureRegion;
-import net.sixunderscore.mocha2d.util.Color;
+import net.sixunderscore.mocha2d.util.ColorUtils;
 import net.sixunderscore.mocha2d.util.MathUtils;
 import net.sixunderscore.mocha2d.vulkan.util.*;
 import net.sixunderscore.mocha2d.vulkan.VulkanManager;
@@ -16,6 +16,9 @@ import org.lwjgl.vulkan.*;
 import java.nio.IntBuffer;
 
 public class BatchRenderer implements AutoCloseable {
+    public static final int NO_TRANSFORM = 0;
+    public static final int NO_TINT = 0;
+
     private final int framesInFlight;
     private int frameInFlightIndex;
     private final GraphicsPipeline pipeline;
@@ -26,7 +29,7 @@ public class BatchRenderer implements AutoCloseable {
     private final IntBuffer imageIndexBuffer;
     private final VkClearColorValue clearColor;
 
-    public BatchRenderer(ResourceManager resourceManager, SwapChain swapChain, Color clearColor) {
+    public BatchRenderer(ResourceManager resourceManager, SwapChain swapChain) {
         this.framesInFlight = swapChain.getImageCount();
         this.frameInFlightIndex = 0;
         this.frameResources = new FrameResources[this.framesInFlight];
@@ -46,11 +49,7 @@ public class BatchRenderer implements AutoCloseable {
         }
 
         this.imageIndexBuffer = MemoryUtil.memAllocInt(1);
-        this.clearColor = VkClearColorValue.calloc()
-                .float32(0, clearColor.linearR())
-                .float32(1, clearColor.linearG())
-                .float32(2, clearColor.linearB())
-                .float32(3, 0);
+        this.clearColor = VkClearColorValue.calloc();
     }
 
     public int addRotationTransform(float rotationRadians, float originX, float originY) {
@@ -84,23 +83,36 @@ public class BatchRenderer implements AutoCloseable {
         return frameResources.writeTransformToBuffer(m00, m10, m01, m11, originX, originY);
     }
 
+    public int addTint(byte r, byte g, byte b, float a) {
+        FrameResources frameResources = this.frameResources[this.frameInFlightIndex];
+        return frameResources.writeTintToBuffer(r, g, b, a);
+    }
+
     public void addSprite(TextureRegion texture, float x, float y, float width, float height) {
-        this.addSprite(texture, x, y, width, height, 0);
+        this.addSprite(texture, x, y, width, height, NO_TRANSFORM, NO_TINT);
     }
 
     public void addSprite(TextureRegion texture, float x, float y, float width, float height, int transformIndex) {
+        this.addSprite(texture, x, y, width, height, transformIndex, NO_TINT);
+    }
+
+    public void addSprite(TextureRegion texture, float x, float y, float width, float height, int transformIndex, int tintIndex) {
         FrameResources frameResources = this.frameResources[this.frameInFlightIndex];
         float endX = x + width;
         float endY = y + height;
 
-        frameResources.writeQuadToBuffers(texture, x, y, endX, y, x, endY, endX, endY, transformIndex);
+        frameResources.writeQuadToBuffers(texture, x, y, endX, y, x, endY, endX, endY, transformIndex, tintIndex);
     }
 
     public void addText(BitmapFont bitmapFont, String text, float x, float y, float charScale) {
-        this.addText(bitmapFont, text, x, y, charScale, 0);
+        this.addText(bitmapFont, text, x, y, charScale, NO_TRANSFORM, NO_TINT);
     }
 
     public void addText(BitmapFont bitmapFont, String text, float x, float y, float charScale, int transformIndex) {
+        this.addText(bitmapFont, text, x, y, charScale, transformIndex, NO_TINT);
+    }
+
+    public void addText(BitmapFont bitmapFont, String text, float x, float y, float charScale, int transformIndex, int tintIndex) {
         FrameResources frameResources = this.frameResources[this.frameInFlightIndex];
         float cursorX = x;
         float cursorY = y;
@@ -128,7 +140,7 @@ public class BatchRenderer implements AutoCloseable {
                     float charY = cursorY + glyphData.descent() * charScale;
                     float endCharY = charY + height;
 
-                    frameResources.writeQuadToBuffers(texture, charX, charY, endCharX, charY, charX, endCharY, endCharX, endCharY, transformIndex);
+                    frameResources.writeQuadToBuffers(texture, charX, charY, endCharX, charY, charX, endCharY, endCharX, endCharY, transformIndex, tintIndex);
 
                     cursorX += glyphData.advance() * charScale;
                 }
@@ -141,7 +153,7 @@ public class BatchRenderer implements AutoCloseable {
                                 float bottomRightX, float bottomRightY,
                                 float topLeftX, float topLeftY,
                                 float topRightX, float topRightY) {
-        this.addArbitraryQuad(texture, bottomLeftX, bottomLeftY, bottomRightX, bottomRightY, topLeftX, topLeftY, topRightX, topRightY, 0);
+        this.addArbitraryQuad(texture, bottomLeftX, bottomLeftY, bottomRightX, bottomRightY, topLeftX, topLeftY, topRightX, topRightY, NO_TRANSFORM, NO_TINT);
     }
 
     public void addArbitraryQuad(TextureRegion texture,
@@ -150,8 +162,17 @@ public class BatchRenderer implements AutoCloseable {
                                  float topLeftX, float topLeftY,
                                  float topRightX, float topRightY,
                                  int transformIndex) {
+        this.addArbitraryQuad(texture, bottomLeftX, bottomLeftY, bottomRightX, bottomRightY, topLeftX, topLeftY, topRightX, topRightY, transformIndex, NO_TINT);
+    }
+
+    public void addArbitraryQuad(TextureRegion texture,
+                                 float bottomLeftX, float bottomLeftY,
+                                 float bottomRightX, float bottomRightY,
+                                 float topLeftX, float topLeftY,
+                                 float topRightX, float topRightY,
+                                 int transformIndex, int tintIndex) {
         FrameResources frameResources = this.frameResources[this.frameInFlightIndex];
-        frameResources.writeQuadToBuffers(texture, bottomLeftX, bottomLeftY, bottomRightX, bottomRightY, topLeftX, topLeftY, topRightX, topRightY, transformIndex);
+        frameResources.writeQuadToBuffers(texture, bottomLeftX, bottomLeftY, bottomRightX, bottomRightY, topLeftX, topLeftY, topRightX, topRightY, transformIndex, tintIndex);
     }
 
     public void draw(OrthographicCamera camera, SwapChain swapChain, ResourceManager resourceManager, ViewportScissor viewportScissor) {
@@ -177,7 +198,7 @@ public class BatchRenderer implements AutoCloseable {
             if (errCode == VK14.VK_SUCCESS || errCode == KHRSwapchain.VK_SUBOPTIMAL_KHR) {
                 int imageIndex = this.imageIndexBuffer.get(0);
 
-                frameResources.recordGraphicsCommands(stack, swapChain, resourceManager, viewportScissor, this.pipeline, imageIndex, this.clearColor, camera);
+                frameResources.recordCommands(stack, swapChain, resourceManager, viewportScissor, this.pipeline, imageIndex, this.clearColor, camera);
 
                 long renderFinishedSemaphore = this.renderFinishedSemaphores[imageIndex];
                 frameResources.submitCommandBuffer(stack, imageAvailableSemaphore, renderFinishedSemaphore, inFlightFence);
@@ -201,11 +222,11 @@ public class BatchRenderer implements AutoCloseable {
         return this.inFlightFences;
     }
 
-    public void setClearColor(Color color) {
+    public void setClearColor(byte r, byte g, byte b) {
         this.clearColor
-                .float32(0, color.linearR())
-                .float32(1, color.linearG())
-                .float32(2, color.linearB());
+                .float32(0, ColorUtils.srgbToLinear(r))
+                .float32(1, ColorUtils.srgbToLinear(g))
+                .float32(2, ColorUtils.srgbToLinear(b));
     }
 
     @Override

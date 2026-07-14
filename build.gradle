@@ -46,10 +46,14 @@ tasks.build {
     dependsOn tasks.copyLibs
 }
 
+tasks.withType(JavaCompile).configureEach {
+    it.options.compilerArgs << '--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED'
+}
+
 tasks.withType(JavaExec).configureEach {
     jvmArgs += [
             '--enable-native-access=ALL-UNNAMED',
-            '-Djoml.nounsafe=true',
+            '-Djoml.internalunsafe=true',
             '--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED'
     ]
 }

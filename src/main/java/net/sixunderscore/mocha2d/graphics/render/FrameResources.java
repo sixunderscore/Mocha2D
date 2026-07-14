@@ -1,8 +1,9 @@
 package net.sixunderscore.mocha2d.graphics.render;
 
-import net.sixunderscore.mocha2d.graphics.resources.ResourceManager;
 import net.sixunderscore.mocha2d.graphics.OrthographicCamera;
+import net.sixunderscore.mocha2d.graphics.resources.ResourceManager;
 import net.sixunderscore.mocha2d.graphics.resources.textures.TextureRegion;
+import net.sixunderscore.mocha2d.util.ColorUtils;
 import net.sixunderscore.mocha2d.vulkan.VulkanManager;
 import net.sixunderscore.mocha2d.vulkan.util.*;
 import org.joml.Matrix2f;
@@ -11,46 +12,64 @@ import org.lwjgl.system.MemoryStack;
 import org.lwjgl.util.vma.Vma;
 import org.lwjgl.vulkan.*;
 
-import java.lang.foreign.MemorySegment;
-import java.lang.foreign.ValueLayout;
-
 public class FrameResources implements AutoCloseable {
+    private static final jdk.internal.misc.Unsafe UNSAFE = jdk.internal.misc.Unsafe.getUnsafe();
+
     private final CommandPool commandPool;
     private final VkCommandBuffer commandBuffer;
+
+    private final int maxQuads;
+    private int writtenQuads;
+    private int writtenTransforms;
+    private int writtenTints;
+
     private final GpuBuffer indexBuffer;
-    private final MemorySegment mappedIndexBuffer;
+    private final long mappedIndexBuffer;
     private int indexWriteOffset;
     private int indexOffset;
+
     private final GpuBuffer vertexBuffer;
-    private final MemorySegment mappedVertexBuffer;
+    private final long mappedVertexBuffer;
     private int vertexWriteOffset;
+
     private final GpuBuffer transformBuffer;
-    private final MemorySegment mappedTransformBuffer;
+    private final long mappedTransformBuffer;
     private int transformWriteOffset;
     private int transformIndex;
     private final long transformBufferAddress;
 
-    public FrameResources(MemoryStack stack) {
-        final int maxQuads = 0xFFFF / 4; // Unsigned short max value divided by 4 vertices in a quad
-        final int maxIndices = maxQuads * 6; // 6 indices in a quad (two triangles)
-        final int maxVertices = maxQuads * 4; // 4 vertices in a quad
+    private final GpuBuffer tintBuffer;
+    private final long mappedTintBuffer;
+    private int tintWriteOffset;
+    private int tintIndex;
+    private final long tintBufferAddress;
 
-        final int indexBufferSizeBytes = maxIndices * Short.BYTES;
-        final int vertexBufferSizeBytes = maxVertices * VertexData.TOTAL_SIZE_BYTES;
-        final int transformBufferSizeBytes = maxQuads * (Matrix2f.BYTES + Float.BYTES * 2);
+    public FrameResources(MemoryStack stack) {
+        this.maxQuads = 0xFFFF / 4; // Unsigned short max value divided by 4 vertices in a quad
+        int maxIndices = this.maxQuads * 6; // 6 indices in a quad (two triangles)
+        int maxVertices = this.maxQuads * 4; // 4 vertices in a quad
+
+        int indexBufferSizeBytes = maxIndices * Short.BYTES;
+        int vertexBufferSizeBytes = maxVertices * VertexData.TOTAL_SIZE_BYTES;
+        int transformBufferSizeBytes = this.maxQuads * (Matrix2f.BYTES + Float.BYTES * 2);
+        int tintBufferSizeBytes = this.maxQuads * (Float.BYTES * 4);
+
+        this.writtenQuads = 0;
+        this.writtenTransforms = 0;
+        this.writtenTints = 0;
 
         this.commandPool = new CommandPool(stack, VulkanManager.getGraphicsQueueIndex(), VK14.VK_COMMAND_POOL_CREATE_TRANSIENT_BIT);
         this.commandBuffer = this.commandPool.allocateCommandBuffer(stack);
 
         this.indexBuffer = new GpuBuffer(stack, indexBufferSizeBytes, VK14.VK_BUFFER_USAGE_INDEX_BUFFER_BIT, Vma.VMA_MEMORY_USAGE_CPU_TO_GPU);
-        this.mappedIndexBuffer = MemorySegment.ofAddress(this.indexBuffer.map(stack)).reinterpret(indexBufferSizeBytes);
+        this.mappedIndexBuffer = this.indexBuffer.map(stack);
         this.indexOffset = 0;
 
         this.vertexBuffer = new GpuBuffer(stack, vertexBufferSizeBytes, VK14.VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, Vma.VMA_MEMORY_USAGE_CPU_TO_GPU);
-        this.mappedVertexBuffer = MemorySegment.ofAddress(this.vertexBuffer.map(stack)).reinterpret(vertexBufferSizeBytes);
+        this.mappedVertexBuffer = this.vertexBuffer.map(stack);
 
         this.transformBuffer = new GpuBuffer(stack, transformBufferSizeBytes, VK14.VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, Vma.VMA_MEMORY_USAGE_CPU_TO_GPU);
-        this.mappedTransformBuffer = MemorySegment.ofAddress(this.transformBuffer.map(stack)).reinterpret(transformBufferSizeBytes);
+        this.mappedTransformBuffer = this.transformBuffer.map(stack);
         this.transformIndex = 0;
 
         this.writeTransformToBuffer(1f, 0, 0, 1f, 0, 0);
@@ -59,75 +78,114 @@ public class FrameResources implements AutoCloseable {
                 .sType$Default()
                 .buffer(this.transformBuffer.getBuffer());
         this.transformBufferAddress = VK14.vkGetBufferDeviceAddress(VulkanManager.getLogicalDevice(), bufferDeviceAddressInfo);
+
+        this.tintBuffer = new GpuBuffer(stack, tintBufferSizeBytes, VK14.VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, Vma.VMA_MEMORY_USAGE_CPU_TO_GPU);
+        this.mappedTintBuffer = this.tintBuffer.map(stack);
+        this.tintIndex = 0;
+
+        this.writeTintToBuffer((byte) 255, (byte) 255, (byte) 255, 0);
+
+        bufferDeviceAddressInfo.buffer(this.tintBuffer.getBuffer());
+        this.tintBufferAddress = VK14.vkGetBufferDeviceAddress(VulkanManager.getLogicalDevice(), bufferDeviceAddressInfo);
     }
 
     public int writeTransformToBuffer(float m00, float m10, float m01, float m11, float originX, float originY) {
-        this.mappedTransformBuffer.set(ValueLayout.JAVA_FLOAT, this.transformWriteOffset, m00);
-        this.mappedTransformBuffer.set(ValueLayout.JAVA_FLOAT, this.transformWriteOffset + 4,  m10);
-        this.mappedTransformBuffer.set(ValueLayout.JAVA_FLOAT, this.transformWriteOffset + 8,  m01);
-        this.mappedTransformBuffer.set(ValueLayout.JAVA_FLOAT, this.transformWriteOffset + 12, m11);
-        this.mappedTransformBuffer.set(ValueLayout.JAVA_FLOAT, this.transformWriteOffset + 16, originX);
-        this.mappedTransformBuffer.set(ValueLayout.JAVA_FLOAT, this.transformWriteOffset + 20, originY);
+        if (++this.writtenTransforms > this.maxQuads) {
+            throw new RuntimeException("Cant add more than: " + this.maxQuads + " transforms per frame");
+        }
+
+        long ptr = this.mappedTransformBuffer + this.transformWriteOffset;
+
+        UNSAFE.putFloat(ptr, m00); ptr += Float.BYTES;
+        UNSAFE.putFloat(ptr, m10); ptr += Float.BYTES;
+        UNSAFE.putFloat(ptr, m01); ptr += Float.BYTES;
+        UNSAFE.putFloat(ptr, m11); ptr += Float.BYTES;
+        UNSAFE.putFloat(ptr, originX); ptr += Float.BYTES;
+        UNSAFE.putFloat(ptr, originY);
 
         this.transformWriteOffset += (6 * Float.BYTES);
 
         return this.transformIndex++;
     }
 
-    public void writeQuadToBuffers(TextureRegion texture,
-                                   float bottomLeftX, float bottomLeftY,
-                                   float bottomRightX, float bottomRightY,
-                                   float topLeftX, float topLeftY,
-                                   float topRightX, float topRightY,
-                                   int transformIndex) {
+    public int writeTintToBuffer(byte r, byte g, byte b, float a) {
+        if (++this.writtenTints > this.maxQuads) {
+            throw new RuntimeException("Cant add more than: " + this.maxQuads + " tints per frame");
+        }
+
+        long ptr = this.mappedTintBuffer + this.tintWriteOffset;
+
+        UNSAFE.putFloat(ptr, ColorUtils.srgbToLinear(r)); ptr += Float.BYTES;
+        UNSAFE.putFloat(ptr, ColorUtils.srgbToLinear(g)); ptr += Float.BYTES;
+        UNSAFE.putFloat(ptr, ColorUtils.srgbToLinear(b)); ptr += Float.BYTES;
+        UNSAFE.putFloat(ptr, a);
+
+        this.tintWriteOffset += (4 * Float.BYTES);
+
+        return this.tintIndex++;
+    }
+
+    public void writeQuadToBuffers(TextureRegion texture, float bottomLeftX, float bottomLeftY, float bottomRightX, float bottomRightY, float topLeftX, float topLeftY, float topRightX, float topRightY, int transformIndex, int tintIndex) {
+        if (++this.writtenQuads > this.maxQuads) {
+            throw new RuntimeException("Cant add more than: " + this.maxQuads + " quads per frame");
+        }
+
         // ---- Writing index data for quad ----
+        long indexPtr = this.mappedIndexBuffer + this.indexWriteOffset;
         short currentBase = (short) this.indexOffset;
 
-        this.mappedIndexBuffer.set(ValueLayout.JAVA_SHORT, this.indexWriteOffset, currentBase);
-        this.mappedIndexBuffer.set(ValueLayout.JAVA_SHORT, this.indexWriteOffset + 2, (short) (currentBase + 1));
-        this.mappedIndexBuffer.set(ValueLayout.JAVA_SHORT, this.indexWriteOffset + 4, (short) (currentBase + 2));
-        this.mappedIndexBuffer.set(ValueLayout.JAVA_SHORT, this.indexWriteOffset + 6, (short) (currentBase + 1));
-        this.mappedIndexBuffer.set(ValueLayout.JAVA_SHORT, this.indexWriteOffset + 8, (short) (currentBase + 3));
-        this.mappedIndexBuffer.set(ValueLayout.JAVA_SHORT, this.indexWriteOffset + 10, (short) (currentBase + 2));
+        UNSAFE.putShort(indexPtr, currentBase); indexPtr += Short.BYTES;
+        UNSAFE.putShort(indexPtr, (short) (currentBase + 1)); indexPtr += Short.BYTES;
+        UNSAFE.putShort(indexPtr, (short) (currentBase + 2)); indexPtr += Short.BYTES;
+        UNSAFE.putShort(indexPtr, (short) (currentBase + 1)); indexPtr += Short.BYTES;
+        UNSAFE.putShort(indexPtr, (short) (currentBase + 3)); indexPtr += Short.BYTES;
+        UNSAFE.putShort(indexPtr, (short) (currentBase + 2));
 
         this.indexWriteOffset += (6 * Short.BYTES);
         this.indexOffset += 4;
 
         // ---- Writing vertex data for quad ----
+        long vertexPtr = this.mappedVertexBuffer + this.vertexWriteOffset;
         int texIndex = texture.imageIndex();
+        int transformIdx = Math.clamp(transformIndex, 0, this.transformIndex - 1);
+        int tintIdx = Math.clamp(tintIndex, 0, this.tintIndex - 1);
 
-        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, this.vertexWriteOffset, bottomLeftX);
-        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, this.vertexWriteOffset + 4, bottomLeftY);
-        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, this.vertexWriteOffset + 8, texture.topLeftU());
-        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, this.vertexWriteOffset + 12, texture.topLeftV());
-        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, this.vertexWriteOffset + 16, texIndex);
-        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, this.vertexWriteOffset + 20, transformIndex);
+        UNSAFE.putFloat(vertexPtr, bottomLeftX); vertexPtr += Float.BYTES;
+        UNSAFE.putFloat(vertexPtr, bottomLeftY); vertexPtr += Float.BYTES;
+        UNSAFE.putFloat(vertexPtr, texture.topLeftU()); vertexPtr += Float.BYTES;
+        UNSAFE.putFloat(vertexPtr, texture.topLeftV()); vertexPtr += Float.BYTES;
+        UNSAFE.putFloat(vertexPtr, texIndex); vertexPtr += Float.BYTES;
+        UNSAFE.putFloat(vertexPtr, transformIdx); vertexPtr += Float.BYTES;
+        UNSAFE.putFloat(vertexPtr, tintIdx); vertexPtr += Float.BYTES;
 
-        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, this.vertexWriteOffset + 24, bottomRightX);
-        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, this.vertexWriteOffset + 28, bottomRightY);
-        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, this.vertexWriteOffset + 32, texture.topRightU());
-        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, this.vertexWriteOffset + 36, texture.topRightV());
-        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, this.vertexWriteOffset + 40, texIndex);
-        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, this.vertexWriteOffset + 44, transformIndex);
+        UNSAFE.putFloat(vertexPtr, bottomRightX); vertexPtr += Float.BYTES;
+        UNSAFE.putFloat(vertexPtr, bottomRightY); vertexPtr += Float.BYTES;
+        UNSAFE.putFloat(vertexPtr, texture.topRightU()); vertexPtr += Float.BYTES;
+        UNSAFE.putFloat(vertexPtr, texture.topRightV()); vertexPtr += Float.BYTES;
+        UNSAFE.putFloat(vertexPtr, texIndex); vertexPtr += Float.BYTES;
+        UNSAFE.putFloat(vertexPtr, transformIdx); vertexPtr += Float.BYTES;
+        UNSAFE.putFloat(vertexPtr, tintIdx); vertexPtr += Float.BYTES;
 
-        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, this.vertexWriteOffset + 48, topLeftX);
-        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, this.vertexWriteOffset + 52, topLeftY);
-        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, this.vertexWriteOffset + 56, texture.bottomLeftU());
-        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, this.vertexWriteOffset + 60, texture.bottomLeftV());
-        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, this.vertexWriteOffset + 64, texIndex);
-        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, this.vertexWriteOffset + 68, transformIndex);
+        UNSAFE.putFloat(vertexPtr, topLeftX); vertexPtr += Float.BYTES;
+        UNSAFE.putFloat(vertexPtr, topLeftY); vertexPtr += Float.BYTES;
+        UNSAFE.putFloat(vertexPtr, texture.bottomLeftU()); vertexPtr += Float.BYTES;
+        UNSAFE.putFloat(vertexPtr, texture.bottomLeftV()); vertexPtr += Float.BYTES;
+        UNSAFE.putFloat(vertexPtr, texIndex); vertexPtr += Float.BYTES;
+        UNSAFE.putFloat(vertexPtr, transformIdx); vertexPtr += Float.BYTES;
+        UNSAFE.putFloat(vertexPtr, tintIdx); vertexPtr += Float.BYTES;
 
-        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, this.vertexWriteOffset + 72, topRightX);
-        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, this.vertexWriteOffset + 76, topRightY);
-        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, this.vertexWriteOffset + 80, texture.bottomRightU());
-        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, this.vertexWriteOffset + 84, texture.bottomRightV());
-        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, this.vertexWriteOffset + 88, texIndex);
-        this.mappedVertexBuffer.set(ValueLayout.JAVA_FLOAT, this.vertexWriteOffset + 92, transformIndex);
+        UNSAFE.putFloat(vertexPtr, topRightX); vertexPtr += Float.BYTES;
+        UNSAFE.putFloat(vertexPtr, topRightY); vertexPtr += Float.BYTES;
+        UNSAFE.putFloat(vertexPtr, texture.bottomRightU()); vertexPtr += Float.BYTES;
+        UNSAFE.putFloat(vertexPtr, texture.bottomRightV()); vertexPtr += Float.BYTES;
+        UNSAFE.putFloat(vertexPtr, texIndex); vertexPtr += Float.BYTES;
+        UNSAFE.putFloat(vertexPtr, transformIdx); vertexPtr += Float.BYTES;
+        UNSAFE.putFloat(vertexPtr, tintIdx);
 
-        this.vertexWriteOffset += (24 * Float.BYTES);
+        this.vertexWriteOffset += (28 * Float.BYTES);
     }
 
-    public void recordGraphicsCommands(MemoryStack stack, SwapChain swapChain, ResourceManager resourceManager, ViewportScissor viewportScissor, GraphicsPipeline pipeline, int imageIndex, VkClearColorValue clearColorValue, OrthographicCamera camera) {
+    public void recordCommands(MemoryStack stack, SwapChain swapChain, ResourceManager resourceManager, ViewportScissor viewportScissor, GraphicsPipeline pipeline, int imageIndex, VkClearColorValue clearColorValue, OrthographicCamera camera) {
         VK14.vkResetCommandPool(VulkanManager.getLogicalDevice(), this.commandPool.getPool(), 0);
         VkCommandBufferBeginInfo commandBufferBeginInfo = VkCommandBufferBeginInfo.calloc(stack)
                 .sType$Default()
@@ -155,6 +213,7 @@ public class FrameResources implements AutoCloseable {
 
         VK14.vkCmdPushConstants(this.commandBuffer, pipeline.getLayout(), VK14.VK_SHADER_STAGE_VERTEX_BIT, 0, camera.getBuffer());
         VK14.vkCmdPushConstants(this.commandBuffer, pipeline.getLayout(), VK14.VK_SHADER_STAGE_VERTEX_BIT, Matrix4f.BYTES, stack.longs(this.transformBufferAddress));
+        VK14.vkCmdPushConstants(this.commandBuffer, pipeline.getLayout(), VK14.VK_SHADER_STAGE_FRAGMENT_BIT, Matrix4f.BYTES + 8, stack.longs(this.tintBufferAddress));
 
         VkClearValue clearValue = VkClearValue.calloc(stack).color(clearColorValue);
         VkRenderingAttachmentInfo.Buffer colorAttachments = VkRenderingAttachmentInfo.calloc(1, stack);
@@ -225,11 +284,20 @@ public class FrameResources implements AutoCloseable {
     }
 
     public void reset() {
+        this.writtenQuads = 0;
+        this.writtenTransforms = 0;
+        this.writtenTints = 0;
+
         this.vertexWriteOffset = 0;
+
         this.indexWriteOffset = 0;
         this.indexOffset = 0;
+
         this.transformWriteOffset = Matrix2f.BYTES + Float.BYTES * 2;
         this.transformIndex = 1;
+
+        this.tintWriteOffset = Float.BYTES * 4;
+        this.tintIndex = 1;
     }
 
     @Override
@@ -238,5 +306,6 @@ public class FrameResources implements AutoCloseable {
         this.indexBuffer.close();
         this.vertexBuffer.close();
         this.transformBuffer.close();
+        this.tintBuffer.close();
     }
 }

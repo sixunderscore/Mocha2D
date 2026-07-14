@@ -15,6 +15,7 @@ layout(location = 0) in vec2 vertexPos;
 layout(location = 1) in vec2 uvCoords;
 layout(location = 2) in float textureIndex;
 layout(location = 3) in float transformIndex;
+layout(location = 4) in float tintIndex;
 
 layout(push_constant) uniform PushConstants {
     mat4 viewProjection;
@@ -23,10 +24,12 @@ layout(push_constant) uniform PushConstants {
 
 layout(location = 0) out vec2 fragUvCoords;
 layout(location = 1) out float fragTextureIndex;
+layout(location = 2) out float fragTintIndex;
 
 void main() {
     fragUvCoords = uvCoords;
     fragTextureIndex = textureIndex;
+    fragTintIndex = tintIndex;
 
     TransformData data = pushConstants.transforms.buff[uint(transformIndex)];
 

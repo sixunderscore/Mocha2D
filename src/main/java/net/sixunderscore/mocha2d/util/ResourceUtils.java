@@ -41,11 +41,11 @@ public class ResourceUtils {
         return new TextureData(imageData, width[0], height[0]);
     }
 
-    public static TextureData convertGrayscaleToRGBA(ByteBuffer grayscaleImage, int grayscaleSideSize, int grayscaleTotalSize, Color color) {
+    public static TextureData convertGrayscaleToRGBA(ByteBuffer grayscaleImage, int grayscaleSideSize, int grayscaleTotalSize) {
         ByteBuffer rgbaBuffer = MemoryUtil.memAlloc(grayscaleTotalSize * 4);
 
         for (int i = 0; i < grayscaleTotalSize; ++i) {
-            rgbaBuffer.put(color.r()).put(color.g()).put(color.b()).put(grayscaleImage.get(i));
+            rgbaBuffer.put((byte) 255).put((byte) 255).put((byte) 255).put(grayscaleImage.get(i));
         }
 
         return new TextureData(rgbaBuffer.flip(), grayscaleSideSize, grayscaleSideSize);

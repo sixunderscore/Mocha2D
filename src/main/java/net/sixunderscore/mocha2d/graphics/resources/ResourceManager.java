@@ -1,6 +1,5 @@
 package net.sixunderscore.mocha2d.graphics.resources;
 
-import net.sixunderscore.mocha2d.graphics.resources.text.BitmapFontResolution;
 import net.sixunderscore.mocha2d.graphics.resources.textures.TextureAtlas;
 import net.sixunderscore.mocha2d.graphics.resources.textures.TextureData;
 import net.sixunderscore.mocha2d.graphics.resources.textures.TextureRegion;
@@ -212,25 +211,24 @@ public class ResourceManager implements AutoCloseable {
         }
 
         // Font atlas dimensions
-        BitmapFontResolution bitmapResolution = file.bitmapResolution();
-        int charResolution = bitmapResolution.getCharResolution();
-        int grayscaleSideSize = bitmapResolution.getAtlasSideSize();
+        int charPixelHeight = file.charPixelHeight();
+        int grayscaleSideSize = ((int) Math.ceil(Math.sqrt(TextData.NUM_CHARS))) * charPixelHeight;
         int grayscaleTotalSize = grayscaleSideSize * grayscaleSideSize;
 
         // Use STB to generate a grayscale font atlas
         ByteBuffer grayscaleImageBuffer = MemoryUtil.memAlloc(grayscaleTotalSize);
         STBTTBakedChar.Buffer charData = STBTTBakedChar.malloc(TextData.NUM_CHARS, stack);
-        STBTruetype.stbtt_BakeFontBitmap(ttfFileData, charResolution, grayscaleImageBuffer, grayscaleSideSize, grayscaleSideSize, TextData.FIRST_CHAR, charData);
+        STBTruetype.stbtt_BakeFontBitmap(ttfFileData, charPixelHeight, grayscaleImageBuffer, grayscaleSideSize, grayscaleSideSize, TextData.FIRST_CHAR, charData);
 
         // Convert to RGBA
-        try (TextureData textureData = ResourceUtils.convertGrayscaleToRGBA(grayscaleImageBuffer, grayscaleSideSize, grayscaleTotalSize, file.fontColor())) {
+        try (TextureData textureData = ResourceUtils.convertGrayscaleToRGBA(grayscaleImageBuffer, grayscaleSideSize, grayscaleTotalSize)) {
             TextureAtlas fontAtlas = new TextureAtlas(textureData.width(), textureData.height(), false, textureIndex);
             GpuBuffer stagingImageBuffer = ResourceUtils.createStagingImageBuffer(stack, textureData);
 
             // Upload data from staging buffer to GPU memory
             fontAtlas.recordUploadCommands(stack, commandBuffer, stagingImageBuffer);
 
-            BitmapFont bitmapFont = new BitmapFont(fontAtlas, charResolution, charData, fontInfo);
+            BitmapFont bitmapFont = new BitmapFont(fontAtlas, charPixelHeight, charData, fontInfo);
 
             MemoryUtil.memFree(grayscaleImageBuffer);
             MemoryUtil.memFree(ttfFileData);
