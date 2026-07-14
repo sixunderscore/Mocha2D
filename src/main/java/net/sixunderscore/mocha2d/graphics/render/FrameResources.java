@@ -146,7 +146,7 @@ public class FrameResources implements AutoCloseable {
 
         // ---- Writing vertex data for quad ----
         long vertexPtr = this.mappedVertexBuffer + this.vertexWriteOffset;
-        int texIndex = texture.imageIndex();
+        int texIdx = texture.imageIndex();
         int transformIdx = Math.clamp(transformIndex, 0, this.transformIndex - 1);
         int tintIdx = Math.clamp(tintIndex, 0, this.tintIndex - 1);
 
@@ -154,7 +154,7 @@ public class FrameResources implements AutoCloseable {
         UNSAFE.putFloat(vertexPtr, bottomLeftY); vertexPtr += Float.BYTES;
         UNSAFE.putFloat(vertexPtr, texture.topLeftU()); vertexPtr += Float.BYTES;
         UNSAFE.putFloat(vertexPtr, texture.topLeftV()); vertexPtr += Float.BYTES;
-        UNSAFE.putFloat(vertexPtr, texIndex); vertexPtr += Float.BYTES;
+        UNSAFE.putFloat(vertexPtr, texIdx); vertexPtr += Float.BYTES;
         UNSAFE.putFloat(vertexPtr, transformIdx); vertexPtr += Float.BYTES;
         UNSAFE.putFloat(vertexPtr, tintIdx); vertexPtr += Float.BYTES;
 
@@ -162,7 +162,7 @@ public class FrameResources implements AutoCloseable {
         UNSAFE.putFloat(vertexPtr, bottomRightY); vertexPtr += Float.BYTES;
         UNSAFE.putFloat(vertexPtr, texture.topRightU()); vertexPtr += Float.BYTES;
         UNSAFE.putFloat(vertexPtr, texture.topRightV()); vertexPtr += Float.BYTES;
-        UNSAFE.putFloat(vertexPtr, texIndex); vertexPtr += Float.BYTES;
+        UNSAFE.putFloat(vertexPtr, texIdx); vertexPtr += Float.BYTES;
         UNSAFE.putFloat(vertexPtr, transformIdx); vertexPtr += Float.BYTES;
         UNSAFE.putFloat(vertexPtr, tintIdx); vertexPtr += Float.BYTES;
 
@@ -170,7 +170,7 @@ public class FrameResources implements AutoCloseable {
         UNSAFE.putFloat(vertexPtr, topLeftY); vertexPtr += Float.BYTES;
         UNSAFE.putFloat(vertexPtr, texture.bottomLeftU()); vertexPtr += Float.BYTES;
         UNSAFE.putFloat(vertexPtr, texture.bottomLeftV()); vertexPtr += Float.BYTES;
-        UNSAFE.putFloat(vertexPtr, texIndex); vertexPtr += Float.BYTES;
+        UNSAFE.putFloat(vertexPtr, texIdx); vertexPtr += Float.BYTES;
         UNSAFE.putFloat(vertexPtr, transformIdx); vertexPtr += Float.BYTES;
         UNSAFE.putFloat(vertexPtr, tintIdx); vertexPtr += Float.BYTES;
 
@@ -178,7 +178,7 @@ public class FrameResources implements AutoCloseable {
         UNSAFE.putFloat(vertexPtr, topRightY); vertexPtr += Float.BYTES;
         UNSAFE.putFloat(vertexPtr, texture.bottomRightU()); vertexPtr += Float.BYTES;
         UNSAFE.putFloat(vertexPtr, texture.bottomRightV()); vertexPtr += Float.BYTES;
-        UNSAFE.putFloat(vertexPtr, texIndex); vertexPtr += Float.BYTES;
+        UNSAFE.putFloat(vertexPtr, texIdx); vertexPtr += Float.BYTES;
         UNSAFE.putFloat(vertexPtr, transformIdx); vertexPtr += Float.BYTES;
         UNSAFE.putFloat(vertexPtr, tintIdx);
 
