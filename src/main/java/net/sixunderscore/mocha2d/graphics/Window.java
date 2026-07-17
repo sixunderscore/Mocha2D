@@ -3,7 +3,6 @@ package net.sixunderscore.mocha2d.graphics;
 import net.sixunderscore.mocha2d.graphics.resources.textures.TextureData;
 import net.sixunderscore.mocha2d.util.*;
 import net.sixunderscore.mocha2d.util.FpsHelper;
-import net.sixunderscore.mocha2d.vulkan.VulkanRenderBackend;
 import org.lwjgl.glfw.*;
 import org.lwjgl.system.MemoryUtil;
 
@@ -73,7 +72,7 @@ public class Window {
         fpsHelper = new FpsHelper(settings.getFpsCap());
         deltaTime = new DeltaTime();
 
-        renderBackend = new VulkanRenderBackend(window, settings.getTextureFiles(), settings.getTtfFiles());
+        renderBackend = new RenderBackend(window, settings.getTextureFiles(), settings.getTtfFiles());
 
         byte[] clearColor = settings.getClearColor();
         setClearColor(clearColor[0], clearColor[1], clearColor[2]);
