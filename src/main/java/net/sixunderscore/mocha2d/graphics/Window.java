@@ -65,7 +65,7 @@ public class Window {
         fbWidth = widthArr[0];
         fbHeight = heightArr[0];
 
-        GLFW.glfwSetFramebufferSizeCallback(window, (window, newWidth, newHeight) -> {
+        GLFW.glfwSetFramebufferSizeCallback(window, (_, newWidth, newHeight) -> {
             fbWidth = newWidth;
             fbHeight = newHeight;
             camera.adjustProjection();
@@ -77,7 +77,7 @@ public class Window {
         xScale = (float) fbWidth / widthArr[0];
         yScale = (float) fbHeight / heightArr[0];
 
-        GLFW.glfwSetWindowSizeCallback(window, (window, newWidth, newHeight) -> {
+        GLFW.glfwSetWindowSizeCallback(window, (_, newWidth, newHeight) -> {
             xScale = (float) fbWidth / newWidth;
             yScale = (float) fbHeight / newHeight;
         });
