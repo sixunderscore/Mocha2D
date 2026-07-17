@@ -1,17 +1,11 @@
 package net.sixunderscore.mocha2d.graphics;
 
-import net.sixunderscore.mocha2d.graphics.render.BatchRenderer;
 import net.sixunderscore.mocha2d.graphics.resources.textures.TextureData;
-import net.sixunderscore.mocha2d.graphics.resources.ResourceManager;
 import net.sixunderscore.mocha2d.util.*;
 import net.sixunderscore.mocha2d.util.FpsHelper;
-import net.sixunderscore.mocha2d.vulkan.VulkanManager;
-import net.sixunderscore.mocha2d.vulkan.util.SwapChain;
-import net.sixunderscore.mocha2d.vulkan.util.ViewportScissor;
+import net.sixunderscore.mocha2d.vulkan.VulkanRenderBackend;
 import org.lwjgl.glfw.*;
 import org.lwjgl.system.MemoryUtil;
-import org.lwjgl.vulkan.KHRSurface;
-import org.lwjgl.vulkan.VK14;
 
 public class Window {
     private static long window;
@@ -19,13 +13,8 @@ public class Window {
     private static int fbHeight;
     private static float xScale;
     private static float yScale;
-    private static long surface;
-    private static ViewportScissor viewportScissor;
-    private static SwapChain swapChain;
-    private static boolean shouldRebuildSwapChain = false;
-    private static ResourceManager resourceManager;
+    private static RenderBackend renderBackend;
     private static Screen screen;
-    private static BatchRenderer batch;
     private static OrthographicCamera camera;
     private static InputCallbackManager inputCallbackManager;
     private static FpsHelper fpsHelper;
@@ -43,12 +32,6 @@ public class Window {
         if (!GLFW.glfwInit()) {
             throw new IllegalStateException("Failed to initialize GLFW");
         }
-
-        if (!GLFWVulkan.glfwVulkanSupported()) {
-            throw new IllegalStateException("Unable to find Vulkan loader");
-        }
-
-        VulkanManager.init();
 
         GLFW.glfwDefaultWindowHints();
         GLFW.glfwWindowHint(GLFW.GLFW_CLIENT_API, GLFW.GLFW_NO_API);
@@ -70,7 +53,7 @@ public class Window {
             fbHeight = newHeight;
             camera.adjustProjection();
             screen.onWindowResized();
-            shouldRebuildSwapChain = true;
+            renderBackend.onWindowResize();
         });
 
         GLFW.glfwGetWindowSize(window, widthArr, heightArr);
@@ -84,44 +67,28 @@ public class Window {
 
         setWindowIcon(settings.getWindowIconPath());
 
-        long[] surfaceArr = new long[1];
-        if (GLFWVulkan.glfwCreateWindowSurface(VulkanManager.getInstance(), window, null, surfaceArr) != VK14.VK_SUCCESS) {
-            throw new IllegalStateException("Failed to create Vulkan surface");
-        }
-        surface = surfaceArr[0];
-        viewportScissor = new ViewportScissor();
-        swapChain = new SwapChain(surface, viewportScissor.getScissor().extent());
-        resourceManager = new ResourceManager(settings.getTextureFiles(), settings.getTtfFiles());
-
         screen = initialScreen;
-
         inputCallbackManager = new InputCallbackManager(window, screen);
         camera = new OrthographicCamera();
-        batch = new BatchRenderer(resourceManager, swapChain);
-        byte[] clearColor = settings.getClearColor();
-        setClearColor(clearColor[0], clearColor[1], clearColor[2]);
-
         fpsHelper = new FpsHelper(settings.getFpsCap());
         deltaTime = new DeltaTime();
 
-        screen.init(resourceManager);
+        renderBackend = new VulkanRenderBackend(window, settings.getTextureFiles(), settings.getTtfFiles());
+
+        byte[] clearColor = settings.getClearColor();
+        setClearColor(clearColor[0], clearColor[1], clearColor[2]);
+
+        screen.init(renderBackend.getResourceManager());
     }
 
     private static void loop() {
         while (!GLFW.glfwWindowShouldClose(window)) {
-            if (shouldRebuildSwapChain) {
-                viewportScissor.update();
-                swapChain.rebuild(batch.getInFlightFences(), surface, viewportScissor.getScissor().extent());
-                shouldRebuildSwapChain = false;
-            }
-
             deltaTime.update();
             fpsHelper.updateCount();
 
             GLFW.glfwPollEvents();
-            screen.render(batch);
 
-            batch.draw(camera, swapChain, resourceManager, viewportScissor);
+            renderBackend.render(camera, screen);
 
             fpsHelper.cap();
         }
@@ -141,12 +108,12 @@ public class Window {
     public static void setScreen(Screen newScreen) {
         screen.cleanUp();
         screen = newScreen;
-        screen.init(resourceManager);
+        screen.init(renderBackend.getResourceManager());
         inputCallbackManager.setCallbacks(window, screen);
     }
 
     public static void setClearColor(byte r, byte g, byte b) {
-        batch.setClearColor(r, g, b);
+        renderBackend.setClearColor(r, g, b);
     }
 
     public static void setFpsCap(int fpsCap) {
@@ -180,12 +147,7 @@ public class Window {
     private static void cleanUp() {
         screen.cleanUp();
         camera.close();
-        batch.close();
-        resourceManager.close();
-        viewportScissor.close();
-        swapChain.close();
-        KHRSurface.vkDestroySurfaceKHR(VulkanManager.getInstance(), surface, null);
-        VulkanManager.cleanUp();
+        renderBackend.close();
         GLFW.glfwSetErrorCallback(null).free();
         Callbacks.glfwFreeCallbacks(window);
         GLFW.glfwDestroyWindow(window);
