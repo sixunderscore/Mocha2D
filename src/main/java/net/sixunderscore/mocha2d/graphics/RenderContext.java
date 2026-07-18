@@ -1,4 +1,4 @@
-package net.sixunderscore.mocha2d.vulkan;
+package net.sixunderscore.mocha2d.graphics;
 
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.glfw.GLFWVulkan;
@@ -11,7 +11,7 @@ import org.lwjgl.vulkan.*;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 
-public class VulkanManager {
+public class RenderContext {
     private static VkInstance instance;
     private static int graphicsQueueFamilyIndex;
     private static VkDevice logicalDevice;

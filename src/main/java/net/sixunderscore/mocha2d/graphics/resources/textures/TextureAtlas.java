@@ -1,7 +1,7 @@
 package net.sixunderscore.mocha2d.graphics.resources.textures;
 
-import net.sixunderscore.mocha2d.vulkan.util.GpuBuffer;
-import net.sixunderscore.mocha2d.vulkan.VulkanManager;
+import net.sixunderscore.mocha2d.graphics.util.GpuBuffer;
+import net.sixunderscore.mocha2d.graphics.RenderContext;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.util.vma.Vma;
@@ -44,7 +44,7 @@ public class TextureAtlas implements AutoCloseable {
 
             LongBuffer imageBuffer = stack.mallocLong(1);
             PointerBuffer allocationBuffer = stack.mallocPointer(1);
-            if (Vma.vmaCreateImage(VulkanManager.getAllocator(), imageCreateInfo, allocationCreateInfo, imageBuffer, allocationBuffer, null) != VK14.VK_SUCCESS) {
+            if (Vma.vmaCreateImage(RenderContext.getAllocator(), imageCreateInfo, allocationCreateInfo, imageBuffer, allocationBuffer, null) != VK14.VK_SUCCESS) {
                 throw new IllegalStateException("Failed to create texture");
             }
 
@@ -64,7 +64,7 @@ public class TextureAtlas implements AutoCloseable {
                 .subresourceRange(s -> s.set(VK14.VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1));
 
         LongBuffer imageViewBuff = stack.mallocLong(1);
-        if (VK14.vkCreateImageView(VulkanManager.getLogicalDevice(), imageViewCreateInfo, null, imageViewBuff) != VK14.VK_SUCCESS) {
+        if (VK14.vkCreateImageView(RenderContext.getLogicalDevice(), imageViewCreateInfo, null, imageViewBuff) != VK14.VK_SUCCESS) {
             throw new IllegalStateException("Failed to create image view");
         }
 
@@ -153,7 +153,7 @@ public class TextureAtlas implements AutoCloseable {
 
     @Override
     public void close() {
-        VK14.vkDestroyImageView(VulkanManager.getLogicalDevice(), this.imageView, null);
-        Vma.vmaDestroyImage(VulkanManager.getAllocator(), this.image, this.allocation);
+        VK14.vkDestroyImageView(RenderContext.getLogicalDevice(), this.imageView, null);
+        Vma.vmaDestroyImage(RenderContext.getAllocator(), this.image, this.allocation);
     }
 }

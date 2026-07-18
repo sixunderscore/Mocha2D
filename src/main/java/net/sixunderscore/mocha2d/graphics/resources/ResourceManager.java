@@ -3,12 +3,12 @@ package net.sixunderscore.mocha2d.graphics.resources;
 import net.sixunderscore.mocha2d.graphics.resources.textures.TextureAtlas;
 import net.sixunderscore.mocha2d.graphics.resources.textures.TextureData;
 import net.sixunderscore.mocha2d.graphics.resources.textures.TextureRegion;
-import net.sixunderscore.mocha2d.vulkan.util.CommandPool;
-import net.sixunderscore.mocha2d.vulkan.util.SyncUtils;
+import net.sixunderscore.mocha2d.graphics.util.CommandPool;
+import net.sixunderscore.mocha2d.graphics.util.SyncUtils;
 import net.sixunderscore.mocha2d.graphics.resources.text.TextData;
 import net.sixunderscore.mocha2d.graphics.resources.text.BitmapFont;
-import net.sixunderscore.mocha2d.vulkan.util.GpuBuffer;
-import net.sixunderscore.mocha2d.vulkan.VulkanManager;
+import net.sixunderscore.mocha2d.graphics.util.GpuBuffer;
+import net.sixunderscore.mocha2d.graphics.RenderContext;
 import net.sixunderscore.mocha2d.util.ResourceUtils;
 import org.lwjgl.stb.STBTTBakedChar;
 import org.lwjgl.stb.STBTTFontinfo;
@@ -64,7 +64,7 @@ public class ResourceManager implements AutoCloseable {
                 .pPoolSizes(descriptorPoolSizes);
 
         LongBuffer descriptorPoolBuff = stack.mallocLong(1);
-        if (VK14.vkCreateDescriptorPool(VulkanManager.getLogicalDevice(), descriptorPoolCreateInfo, null, descriptorPoolBuff) != VK14.VK_SUCCESS) {
+        if (VK14.vkCreateDescriptorPool(RenderContext.getLogicalDevice(), descriptorPoolCreateInfo, null, descriptorPoolBuff) != VK14.VK_SUCCESS) {
             throw new IllegalStateException("Failed to create descriptor pool");
         }
 
@@ -80,7 +80,7 @@ public class ResourceManager implements AutoCloseable {
                 .pBindings(descriptorSetLayoutBindings);
 
         LongBuffer descriptorSetLayoutBuff = stack.mallocLong(1);
-        if (VK14.vkCreateDescriptorSetLayout(VulkanManager.getLogicalDevice(), descriptorSetLayoutCreateInfo, null, descriptorSetLayoutBuff) != VK14.VK_SUCCESS) {
+        if (VK14.vkCreateDescriptorSetLayout(RenderContext.getLogicalDevice(), descriptorSetLayoutCreateInfo, null, descriptorSetLayoutBuff) != VK14.VK_SUCCESS) {
             throw new IllegalStateException("Failed to create descriptor set layout");
         }
 
@@ -94,7 +94,7 @@ public class ResourceManager implements AutoCloseable {
                 .pSetLayouts(stack.longs(this.descriptorSetLayout));
 
         LongBuffer descriptorSetBuff = stack.mallocLong(1);
-        if (VK14.vkAllocateDescriptorSets(VulkanManager.getLogicalDevice(), descriptorSetAllocateInfo, descriptorSetBuff) != VK14.VK_SUCCESS) {
+        if (VK14.vkAllocateDescriptorSets(RenderContext.getLogicalDevice(), descriptorSetAllocateInfo, descriptorSetBuff) != VK14.VK_SUCCESS) {
             throw new IllegalStateException("Failed to allocate descriptor set");
         }
 
@@ -114,7 +114,7 @@ public class ResourceManager implements AutoCloseable {
                 .compareEnable(false);
 
         LongBuffer samplerBuff = stack.mallocLong(1);
-        if (VK14.vkCreateSampler(VulkanManager.getLogicalDevice(), samplerCreateInfo, null, samplerBuff) != VK14.VK_SUCCESS) {
+        if (VK14.vkCreateSampler(RenderContext.getLogicalDevice(), samplerCreateInfo, null, samplerBuff) != VK14.VK_SUCCESS) {
             throw new IllegalStateException("Failed to create sampler");
         }
 
@@ -126,7 +126,7 @@ public class ResourceManager implements AutoCloseable {
         List<GpuBuffer> stagingBuffersToFree = new ArrayList<>(textureCount);
         int textureIndex = 0;
 
-        try (CommandPool commandPool = new CommandPool(stack, VulkanManager.getGraphicsQueueIndex(), VK14.VK_COMMAND_POOL_CREATE_TRANSIENT_BIT)) {
+        try (CommandPool commandPool = new CommandPool(stack, RenderContext.getGraphicsQueueIndex(), VK14.VK_COMMAND_POOL_CREATE_TRANSIENT_BIT)) {
             VkCommandBuffer commandBuffer = commandPool.allocateCommandBuffer(stack);
 
             VkCommandBufferBeginInfo commandBufferBeginInfo = VkCommandBufferBeginInfo.calloc(stack)
@@ -157,12 +157,12 @@ public class ResourceManager implements AutoCloseable {
                     .sType$Default()
                     .pCommandBufferInfos(commandBufferSubmitInfo);
 
-            VK14.vkQueueSubmit2(VulkanManager.getGraphicsQueue(), submitInfo, imagesUploadedFence);
-            VK14.vkWaitForFences(VulkanManager.getLogicalDevice(), imagesUploadedFence, true, Long.MAX_VALUE);
+            VK14.vkQueueSubmit2(RenderContext.getGraphicsQueue(), submitInfo, imagesUploadedFence);
+            VK14.vkWaitForFences(RenderContext.getLogicalDevice(), imagesUploadedFence, true, Long.MAX_VALUE);
         }
 
         // Clean up fence
-        VK14.vkDestroyFence(VulkanManager.getLogicalDevice(), imagesUploadedFence, null);
+        VK14.vkDestroyFence(RenderContext.getLogicalDevice(), imagesUploadedFence, null);
 
         // Clean up all staging buffers after textures have been uploaded
         stagingBuffersToFree.forEach(GpuBuffer::close);
@@ -185,7 +185,7 @@ public class ResourceManager implements AutoCloseable {
                 .descriptorType(VK14.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
                 .pImageInfo(descriptorImagesInfo);
 
-        VK14.vkUpdateDescriptorSets(VulkanManager.getLogicalDevice(), writeDescriptorSet, null);
+        VK14.vkUpdateDescriptorSets(RenderContext.getLogicalDevice(), writeDescriptorSet, null);
     }
 
     private TextureAtlas createTextureAtlas(MemoryStack stack, VkCommandBuffer commandBuffer, TextureFile file, int textureIndex, List<GpuBuffer> stagingBuffersToFree) {
@@ -261,9 +261,9 @@ public class ResourceManager implements AutoCloseable {
     @Override
     public void close() {
         this.atlasMap.values().forEach(TextureAtlas::close);
-        VK14.vkDestroyDescriptorPool(VulkanManager.getLogicalDevice(), this.descriptorPool, null);
-        VK14.vkDestroyDescriptorSetLayout(VulkanManager.getLogicalDevice(), this.descriptorSetLayout, null);
-        VK14.vkDestroySampler(VulkanManager.getLogicalDevice(), this.linearSampler, null);
-        VK14.vkDestroySampler(VulkanManager.getLogicalDevice(), this.nearestSampler, null);
+        VK14.vkDestroyDescriptorPool(RenderContext.getLogicalDevice(), this.descriptorPool, null);
+        VK14.vkDestroyDescriptorSetLayout(RenderContext.getLogicalDevice(), this.descriptorSetLayout, null);
+        VK14.vkDestroySampler(RenderContext.getLogicalDevice(), this.linearSampler, null);
+        VK14.vkDestroySampler(RenderContext.getLogicalDevice(), this.nearestSampler, null);
     }
 }

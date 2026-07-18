@@ -1,4 +1,4 @@
-package net.sixunderscore.mocha2d.vulkan.util;
+package net.sixunderscore.mocha2d.graphics.util;
 
 import net.sixunderscore.mocha2d.graphics.Window;
 import org.lwjgl.vulkan.VkExtent2D;

@@ -1,6 +1,6 @@
-package net.sixunderscore.mocha2d.vulkan.util;
+package net.sixunderscore.mocha2d.graphics.util;
 
-import net.sixunderscore.mocha2d.vulkan.VulkanManager;
+import net.sixunderscore.mocha2d.graphics.RenderContext;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.*;
 
@@ -12,7 +12,7 @@ public class SyncUtils {
                 .sType$Default();
 
         LongBuffer semaphoreBuff = stack.mallocLong(1);
-        if (VK14.vkCreateSemaphore(VulkanManager.getLogicalDevice(), semaphoreCreateInfo, null, semaphoreBuff) != VK14.VK_SUCCESS) {
+        if (VK14.vkCreateSemaphore(RenderContext.getLogicalDevice(), semaphoreCreateInfo, null, semaphoreBuff) != VK14.VK_SUCCESS) {
             throw new IllegalStateException("Failed to create semaphore");
         }
 
@@ -28,7 +28,7 @@ public class SyncUtils {
         }
 
         LongBuffer fenceBuff = stack.mallocLong(1);
-        if (VK14.vkCreateFence(VulkanManager.getLogicalDevice(), fenceCreateInfo, null, fenceBuff) != VK14.VK_SUCCESS) {
+        if (VK14.vkCreateFence(RenderContext.getLogicalDevice(), fenceCreateInfo, null, fenceBuff) != VK14.VK_SUCCESS) {
             throw new IllegalStateException("Failed to create fence");
         }
 

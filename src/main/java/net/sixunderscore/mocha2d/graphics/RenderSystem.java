@@ -4,14 +4,13 @@ import net.sixunderscore.mocha2d.graphics.render.BatchRenderer;
 import net.sixunderscore.mocha2d.graphics.resources.ResourceManager;
 import net.sixunderscore.mocha2d.graphics.resources.TextureFile;
 import net.sixunderscore.mocha2d.graphics.resources.TtfFile;
-import net.sixunderscore.mocha2d.vulkan.VulkanManager;
-import net.sixunderscore.mocha2d.vulkan.util.SwapChain;
-import net.sixunderscore.mocha2d.vulkan.util.ViewportScissor;
+import net.sixunderscore.mocha2d.graphics.util.SwapChain;
+import net.sixunderscore.mocha2d.graphics.util.ViewportScissor;
 import org.lwjgl.glfw.GLFWVulkan;
 import org.lwjgl.vulkan.KHRSurface;
 import org.lwjgl.vulkan.VK14;
 
-public class RenderBackend implements AutoCloseable {
+public class RenderSystem implements AutoCloseable {
     private final long windowSurface;
     private final ViewportScissor viewportScissor;
     private final SwapChain swapChain;
@@ -19,15 +18,15 @@ public class RenderBackend implements AutoCloseable {
     private final ResourceManager resourceManager;
     private final BatchRenderer batch;
 
-    public RenderBackend(long window, TextureFile[] textureFiles, TtfFile[] ttfFiles) {
+    public RenderSystem(long window, TextureFile[] textureFiles, TtfFile[] ttfFiles) {
         if (!GLFWVulkan.glfwVulkanSupported()) {
             throw new IllegalStateException("Unable to find Vulkan loader");
         }
 
-        VulkanManager.init();
+        RenderContext.init();
 
         long[] surfaceArr = new long[1];
-        if (GLFWVulkan.glfwCreateWindowSurface(VulkanManager.getInstance(), window, null, surfaceArr) != VK14.VK_SUCCESS) {
+        if (GLFWVulkan.glfwCreateWindowSurface(RenderContext.getInstance(), window, null, surfaceArr) != VK14.VK_SUCCESS) {
             throw new IllegalStateException("Failed to create Vulkan surface");
         }
         this.windowSurface = surfaceArr[0];
@@ -42,10 +41,10 @@ public class RenderBackend implements AutoCloseable {
         this.shouldRebuildSwapChain = true;
     }
 
-    public void render(OrthographicCamera camera, Screen screen) {
+    public void render(Screen screen, OrthographicCamera camera) {
         if (this.shouldRebuildSwapChain) {
             this.viewportScissor.update();
-            this.swapChain.rebuild(batch.getInFlightFences(), this.windowSurface, this.viewportScissor.getScissor().extent());
+            this.swapChain.rebuild(this.batch.getInFlightFences(), this.windowSurface, this.viewportScissor.getScissor().extent());
             this.shouldRebuildSwapChain = false;
         }
 
@@ -67,7 +66,7 @@ public class RenderBackend implements AutoCloseable {
         this.resourceManager.close();
         this.viewportScissor.close();
         this.swapChain.close();
-        KHRSurface.vkDestroySurfaceKHR(VulkanManager.getInstance(), this.windowSurface, null);
-        VulkanManager.cleanUp();
+        KHRSurface.vkDestroySurfaceKHR(RenderContext.getInstance(), this.windowSurface, null);
+        RenderContext.cleanUp();
     }
 }

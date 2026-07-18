@@ -1,4 +1,4 @@
-package net.sixunderscore.mocha2d.vulkan;
+package net.sixunderscore.mocha2d.graphics;
 
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.*;
@@ -68,7 +68,7 @@ public class VulkanErrorHandling {
 
     public static void cleanUp() {
         if (debugMessengerHandle != 0) {
-            EXTDebugUtils.vkDestroyDebugUtilsMessengerEXT(VulkanManager.getInstance(), debugMessengerHandle, null);
+            EXTDebugUtils.vkDestroyDebugUtilsMessengerEXT(RenderContext.getInstance(), debugMessengerHandle, null);
         }
     }
 }

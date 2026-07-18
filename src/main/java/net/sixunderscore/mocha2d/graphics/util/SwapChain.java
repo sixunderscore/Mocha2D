@@ -1,6 +1,6 @@
-package net.sixunderscore.mocha2d.vulkan.util;
+package net.sixunderscore.mocha2d.graphics.util;
 
-import net.sixunderscore.mocha2d.vulkan.VulkanManager;
+import net.sixunderscore.mocha2d.graphics.RenderContext;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.*;
 
@@ -27,7 +27,7 @@ public class SwapChain implements AutoCloseable {
 
     private int getImageCount(MemoryStack stack, long surface) {
         VkSurfaceCapabilitiesKHR surfaceCapabilities = VkSurfaceCapabilitiesKHR.calloc(stack);
-        KHRSurface.vkGetPhysicalDeviceSurfaceCapabilitiesKHR(VulkanManager.getPhysicalDevice(), surface, surfaceCapabilities);
+        KHRSurface.vkGetPhysicalDeviceSurfaceCapabilitiesKHR(RenderContext.getPhysicalDevice(), surface, surfaceCapabilities);
 
         int max = surfaceCapabilities.maxImageCount();
         int preferred = surfaceCapabilities.minImageCount() + 1;
@@ -40,7 +40,7 @@ public class SwapChain implements AutoCloseable {
     }
 
     private int getImageFormat(MemoryStack stack, long surface) {
-        VkPhysicalDevice physicalDevice = VulkanManager.getPhysicalDevice();
+        VkPhysicalDevice physicalDevice = RenderContext.getPhysicalDevice();
 
         IntBuffer formatCount = stack.mallocInt(1);
         KHRSurface.vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, formatCount, null);
@@ -85,7 +85,7 @@ public class SwapChain implements AutoCloseable {
                 .oldSwapchain(oldSwapChain);
 
         LongBuffer swapChainBuff = stack.mallocLong(1);
-        if (KHRSwapchain.vkCreateSwapchainKHR(VulkanManager.getLogicalDevice(), swapChainCreateInfo, null, swapChainBuff) != VK14.VK_SUCCESS) {
+        if (KHRSwapchain.vkCreateSwapchainKHR(RenderContext.getLogicalDevice(), swapChainCreateInfo, null, swapChainBuff) != VK14.VK_SUCCESS) {
             throw new IllegalStateException("Failed to create SwapChain");
         }
 
@@ -94,10 +94,10 @@ public class SwapChain implements AutoCloseable {
 
     private long[] getSwapChainImages() {
         int[] swapChainImageCount = new int[1];
-        KHRSwapchain.vkGetSwapchainImagesKHR(VulkanManager.getLogicalDevice(), this.swapChain, swapChainImageCount, null);
+        KHRSwapchain.vkGetSwapchainImagesKHR(RenderContext.getLogicalDevice(), this.swapChain, swapChainImageCount, null);
 
         long[] swapChainImages = new long[swapChainImageCount[0]];
-        KHRSwapchain.vkGetSwapchainImagesKHR(VulkanManager.getLogicalDevice(), this.swapChain, swapChainImageCount, swapChainImages);
+        KHRSwapchain.vkGetSwapchainImagesKHR(RenderContext.getLogicalDevice(), this.swapChain, swapChainImageCount, swapChainImages);
 
         return swapChainImages;
     }
@@ -116,7 +116,7 @@ public class SwapChain implements AutoCloseable {
 
         for (int i = 0; i < this.imageCount; ++i) {
             imageViewCreateInfo.image(this.images[i]);
-            if (VK14.vkCreateImageView(VulkanManager.getLogicalDevice(), imageViewCreateInfo, null, imageViewBuff) != VK14.VK_SUCCESS) {
+            if (VK14.vkCreateImageView(RenderContext.getLogicalDevice(), imageViewCreateInfo, null, imageViewBuff) != VK14.VK_SUCCESS) {
                 throw new IllegalStateException("Failed to create SwapChain image view");
             }
 
@@ -127,8 +127,8 @@ public class SwapChain implements AutoCloseable {
     }
 
     public void rebuild(long[] waitFences, long surface, VkExtent2D extent) {
-        VK14.vkWaitForFences(VulkanManager.getLogicalDevice(), waitFences, true, Long.MAX_VALUE);
-        VK14.vkDeviceWaitIdle(VulkanManager.getLogicalDevice());
+        VK14.vkWaitForFences(RenderContext.getLogicalDevice(), waitFences, true, Long.MAX_VALUE);
+        VK14.vkDeviceWaitIdle(RenderContext.getLogicalDevice());
 
         long oldSwapChain = this.swapChain;
         long[] oldImageViews = this.imageViews;
@@ -163,7 +163,7 @@ public class SwapChain implements AutoCloseable {
     }
 
     private void cleanUp(long[] imageViews, long swapChain) {
-        VkDevice logicalDevice = VulkanManager.getLogicalDevice();
+        VkDevice logicalDevice = RenderContext.getLogicalDevice();
 
         for (long imageView : imageViews) {
             VK14.vkDestroyImageView(logicalDevice, imageView, null);

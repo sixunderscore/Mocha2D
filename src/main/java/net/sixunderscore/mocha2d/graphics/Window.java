@@ -12,7 +12,7 @@ public class Window {
     private static int fbHeight;
     private static float xScale;
     private static float yScale;
-    private static RenderBackend renderBackend;
+    private static RenderSystem renderSystem;
     private static Screen screen;
     private static OrthographicCamera camera;
     private static InputCallbackManager inputCallbackManager;
@@ -52,7 +52,7 @@ public class Window {
             fbHeight = newHeight;
             camera.adjustProjection();
             screen.onWindowResized();
-            renderBackend.onWindowResize();
+            renderSystem.onWindowResize();
         });
 
         GLFW.glfwGetWindowSize(window, widthArr, heightArr);
@@ -72,12 +72,12 @@ public class Window {
         fpsHelper = new FpsHelper(settings.getFpsCap());
         deltaTime = new DeltaTime();
 
-        renderBackend = new RenderBackend(window, settings.getTextureFiles(), settings.getTtfFiles());
+        renderSystem = new RenderSystem(window, settings.getTextureFiles(), settings.getTtfFiles());
 
         byte[] clearColor = settings.getClearColor();
         setClearColor(clearColor[0], clearColor[1], clearColor[2]);
 
-        screen.init(renderBackend.getResourceManager());
+        screen.init(renderSystem.getResourceManager());
     }
 
     private static void loop() {
@@ -87,7 +87,7 @@ public class Window {
 
             GLFW.glfwPollEvents();
 
-            renderBackend.render(camera, screen);
+            renderSystem.render(screen, camera);
 
             fpsHelper.cap();
         }
@@ -107,12 +107,12 @@ public class Window {
     public static void setScreen(Screen newScreen) {
         screen.cleanUp();
         screen = newScreen;
-        screen.init(renderBackend.getResourceManager());
+        screen.init(renderSystem.getResourceManager());
         inputCallbackManager.setCallbacks(window, screen);
     }
 
     public static void setClearColor(byte r, byte g, byte b) {
-        renderBackend.setClearColor(r, g, b);
+        renderSystem.setClearColor(r, g, b);
     }
 
     public static void setFpsCap(int fpsCap) {
@@ -146,7 +146,7 @@ public class Window {
     private static void cleanUp() {
         screen.cleanUp();
         camera.close();
-        renderBackend.close();
+        renderSystem.close();
         GLFW.glfwSetErrorCallback(null).free();
         Callbacks.glfwFreeCallbacks(window);
         GLFW.glfwDestroyWindow(window);

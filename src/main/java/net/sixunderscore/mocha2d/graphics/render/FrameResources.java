@@ -4,8 +4,8 @@ import net.sixunderscore.mocha2d.graphics.OrthographicCamera;
 import net.sixunderscore.mocha2d.graphics.resources.ResourceManager;
 import net.sixunderscore.mocha2d.graphics.resources.textures.TextureRegion;
 import net.sixunderscore.mocha2d.util.ColorUtils;
-import net.sixunderscore.mocha2d.vulkan.VulkanManager;
-import net.sixunderscore.mocha2d.vulkan.util.*;
+import net.sixunderscore.mocha2d.graphics.RenderContext;
+import net.sixunderscore.mocha2d.graphics.util.*;
 import org.joml.Matrix2f;
 import org.joml.Matrix4f;
 import org.lwjgl.system.MemoryStack;
@@ -58,7 +58,7 @@ public class FrameResources implements AutoCloseable {
         this.writtenTransforms = 0;
         this.writtenTints = 0;
 
-        this.commandPool = new CommandPool(stack, VulkanManager.getGraphicsQueueIndex(), VK14.VK_COMMAND_POOL_CREATE_TRANSIENT_BIT);
+        this.commandPool = new CommandPool(stack, RenderContext.getGraphicsQueueIndex(), VK14.VK_COMMAND_POOL_CREATE_TRANSIENT_BIT);
         this.commandBuffer = this.commandPool.allocateCommandBuffer(stack);
 
         this.indexBuffer = new GpuBuffer(stack, indexBufferSizeBytes, VK14.VK_BUFFER_USAGE_INDEX_BUFFER_BIT, Vma.VMA_MEMORY_USAGE_CPU_TO_GPU);
@@ -77,7 +77,7 @@ public class FrameResources implements AutoCloseable {
         VkBufferDeviceAddressInfo bufferDeviceAddressInfo = VkBufferDeviceAddressInfo.calloc(stack)
                 .sType$Default()
                 .buffer(this.transformBuffer.getBuffer());
-        this.transformBufferAddress = VK14.vkGetBufferDeviceAddress(VulkanManager.getLogicalDevice(), bufferDeviceAddressInfo);
+        this.transformBufferAddress = VK14.vkGetBufferDeviceAddress(RenderContext.getLogicalDevice(), bufferDeviceAddressInfo);
 
         this.tintBuffer = new GpuBuffer(stack, tintBufferSizeBytes, VK14.VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, Vma.VMA_MEMORY_USAGE_CPU_TO_GPU);
         this.mappedTintBuffer = this.tintBuffer.map(stack);
@@ -86,7 +86,7 @@ public class FrameResources implements AutoCloseable {
         this.writeTintToBuffer((byte) 255, (byte) 255, (byte) 255, 0);
 
         bufferDeviceAddressInfo.buffer(this.tintBuffer.getBuffer());
-        this.tintBufferAddress = VK14.vkGetBufferDeviceAddress(VulkanManager.getLogicalDevice(), bufferDeviceAddressInfo);
+        this.tintBufferAddress = VK14.vkGetBufferDeviceAddress(RenderContext.getLogicalDevice(), bufferDeviceAddressInfo);
     }
 
     public int writeTransformToBuffer(float m00, float m10, float m01, float m11, float originX, float originY) {
@@ -186,7 +186,7 @@ public class FrameResources implements AutoCloseable {
     }
 
     public void recordCommands(MemoryStack stack, SwapChain swapChain, ResourceManager resourceManager, ViewportScissor viewportScissor, GraphicsPipeline pipeline, int imageIndex, VkClearColorValue clearColorValue, OrthographicCamera camera) {
-        VK14.vkResetCommandPool(VulkanManager.getLogicalDevice(), this.commandPool.getPool(), 0);
+        VK14.vkResetCommandPool(RenderContext.getLogicalDevice(), this.commandPool.getPool(), 0);
         VkCommandBufferBeginInfo commandBufferBeginInfo = VkCommandBufferBeginInfo.calloc(stack)
                 .sType$Default()
                 .flags(VK14.VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
@@ -280,7 +280,7 @@ public class FrameResources implements AutoCloseable {
                 .pSignalSemaphoreInfos(signalSemaphoreSubmitInfo)
                 .pCommandBufferInfos(commandBufferSubmitInfo);
 
-        VK14.vkQueueSubmit2(VulkanManager.getGraphicsQueue(), submitInfo, signalFence);
+        VK14.vkQueueSubmit2(RenderContext.getGraphicsQueue(), submitInfo, signalFence);
     }
 
     public void reset() {

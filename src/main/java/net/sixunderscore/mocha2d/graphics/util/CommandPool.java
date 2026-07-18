@@ -1,6 +1,6 @@
-package net.sixunderscore.mocha2d.vulkan.util;
+package net.sixunderscore.mocha2d.graphics.util;
 
-import net.sixunderscore.mocha2d.vulkan.VulkanManager;
+import net.sixunderscore.mocha2d.graphics.RenderContext;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.VK14;
@@ -20,7 +20,7 @@ public class CommandPool implements AutoCloseable {
                 .flags(flags);
 
         LongBuffer commandPoolBuff = stack.mallocLong(1);
-        if (VK14.vkCreateCommandPool(VulkanManager.getLogicalDevice(), commandPoolCreateInfo, null, commandPoolBuff) != VK14.VK_SUCCESS) {
+        if (VK14.vkCreateCommandPool(RenderContext.getLogicalDevice(), commandPoolCreateInfo, null, commandPoolBuff) != VK14.VK_SUCCESS) {
             throw new IllegalStateException("Failed to create command pool");
         }
 
@@ -35,11 +35,11 @@ public class CommandPool implements AutoCloseable {
                 .level(VK14.VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 
         PointerBuffer commandBufferPtr = stack.mallocPointer(1);
-        if (VK14.vkAllocateCommandBuffers(VulkanManager.getLogicalDevice(), allocateInfo, commandBufferPtr) != VK14.VK_SUCCESS) {
+        if (VK14.vkAllocateCommandBuffers(RenderContext.getLogicalDevice(), allocateInfo, commandBufferPtr) != VK14.VK_SUCCESS) {
             throw new IllegalStateException("Failed to allocate command buffer from pool");
         }
 
-        return new VkCommandBuffer(commandBufferPtr.get(0), VulkanManager.getLogicalDevice());
+        return new VkCommandBuffer(commandBufferPtr.get(0), RenderContext.getLogicalDevice());
     }
 
     public long getPool() {
@@ -48,6 +48,6 @@ public class CommandPool implements AutoCloseable {
 
     @Override
     public void close() {
-        VK14.vkDestroyCommandPool(VulkanManager.getLogicalDevice(), this.pool, null);
+        VK14.vkDestroyCommandPool(RenderContext.getLogicalDevice(), this.pool, null);
     }
 }

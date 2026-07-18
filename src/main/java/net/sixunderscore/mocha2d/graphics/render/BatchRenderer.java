@@ -6,8 +6,8 @@ import net.sixunderscore.mocha2d.graphics.resources.text.GlyphData;
 import net.sixunderscore.mocha2d.graphics.resources.textures.TextureRegion;
 import net.sixunderscore.mocha2d.util.ColorUtils;
 import net.sixunderscore.mocha2d.util.MathUtils;
-import net.sixunderscore.mocha2d.vulkan.util.*;
-import net.sixunderscore.mocha2d.vulkan.VulkanManager;
+import net.sixunderscore.mocha2d.graphics.util.*;
+import net.sixunderscore.mocha2d.graphics.RenderContext;
 import net.sixunderscore.mocha2d.graphics.OrthographicCamera;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
@@ -179,13 +179,13 @@ public class BatchRenderer implements AutoCloseable {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             long inFlightFence = this.inFlightFences[this.frameInFlightIndex];
 
-            VK14.vkWaitForFences(VulkanManager.getLogicalDevice(), inFlightFence, true, Long.MAX_VALUE);
-            VK14.vkResetFences(VulkanManager.getLogicalDevice(), inFlightFence);
+            VK14.vkWaitForFences(RenderContext.getLogicalDevice(), inFlightFence, true, Long.MAX_VALUE);
+            VK14.vkResetFences(RenderContext.getLogicalDevice(), inFlightFence);
 
             long imageAvailableSemaphore = this.imageAvailableSemaphores[this.frameInFlightIndex];
 
             int errCode = KHRSwapchain.vkAcquireNextImageKHR(
-                    VulkanManager.getLogicalDevice(),
+                    RenderContext.getLogicalDevice(),
                     swapChain.getSwapChain(),
                     Long.MAX_VALUE,
                     imageAvailableSemaphore,
@@ -209,7 +209,7 @@ public class BatchRenderer implements AutoCloseable {
                         .pWaitSemaphores(stack.mallocLong(1).put(0, renderFinishedSemaphore))
                         .pSwapchains(stack.mallocLong(1).put(0, swapChain.getSwapChain()))
                         .swapchainCount(1);
-                KHRSwapchain.vkQueuePresentKHR(VulkanManager.getGraphicsQueue(), presentInfo);
+                KHRSwapchain.vkQueuePresentKHR(RenderContext.getGraphicsQueue(), presentInfo);
 
                 this.frameInFlightIndex = ++this.frameInFlightIndex % this.framesInFlight;
             }
@@ -231,10 +231,10 @@ public class BatchRenderer implements AutoCloseable {
 
     @Override
     public void close() {
-        VkDevice logicalDevice = VulkanManager.getLogicalDevice();
+        VkDevice logicalDevice = RenderContext.getLogicalDevice();
 
         VK14.vkWaitForFences(logicalDevice, this.inFlightFences, true, Long.MAX_VALUE);
-        VK14.vkQueueWaitIdle(VulkanManager.getGraphicsQueue());
+        VK14.vkQueueWaitIdle(RenderContext.getGraphicsQueue());
 
         for (int i = 0; i < this.framesInFlight; ++i) {
             this.frameResources[i].close();
