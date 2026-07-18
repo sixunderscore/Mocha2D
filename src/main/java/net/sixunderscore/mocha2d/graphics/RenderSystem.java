@@ -37,7 +37,7 @@ public class RenderSystem implements AutoCloseable {
         this.batch = new BatchRenderer(this.resourceManager, this.swapChain);
     }
 
-    public void onWindowResize() {
+    public void onWindowResized() {
         this.shouldRebuildSwapChain = true;
     }
 
