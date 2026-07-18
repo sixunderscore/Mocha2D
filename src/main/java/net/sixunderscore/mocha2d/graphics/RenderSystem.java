@@ -6,9 +6,11 @@ import net.sixunderscore.mocha2d.graphics.resources.TextureFile;
 import net.sixunderscore.mocha2d.graphics.resources.TtfFile;
 import net.sixunderscore.mocha2d.graphics.util.SwapChain;
 import net.sixunderscore.mocha2d.graphics.util.ViewportScissor;
-import org.lwjgl.glfw.GLFWVulkan;
+import org.lwjgl.sdl.SDLVulkan;
+import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.KHRSurface;
-import org.lwjgl.vulkan.VK14;
+
+import java.nio.LongBuffer;
 
 public class RenderSystem implements AutoCloseable {
     private final long windowSurface;
@@ -18,18 +20,15 @@ public class RenderSystem implements AutoCloseable {
     private final ResourceManager resourceManager;
     private final BatchRenderer batch;
 
-    public RenderSystem(long window, TextureFile[] textureFiles, TtfFile[] ttfFiles) {
-        if (!GLFWVulkan.glfwVulkanSupported()) {
-            throw new IllegalStateException("Unable to find Vulkan loader");
-        }
+    public RenderSystem(MemoryStack stack, long window, TextureFile[] textureFiles, TtfFile[] ttfFiles) {
+        RenderContext.init(stack);
 
-        RenderContext.init();
-
-        long[] surfaceArr = new long[1];
-        if (GLFWVulkan.glfwCreateWindowSurface(RenderContext.getInstance(), window, null, surfaceArr) != VK14.VK_SUCCESS) {
+        LongBuffer surfaceBuff = stack.mallocLong(1);
+        if (!SDLVulkan.SDL_Vulkan_CreateSurface(window, RenderContext.getInstance(), null, surfaceBuff)) {
             throw new IllegalStateException("Failed to create Vulkan surface");
         }
-        this.windowSurface = surfaceArr[0];
+
+        this.windowSurface = surfaceBuff.get(0);
         this.viewportScissor = new ViewportScissor();
         this.swapChain = new SwapChain(windowSurface, viewportScissor.getScissor().extent());
         this.shouldRebuildSwapChain = false;

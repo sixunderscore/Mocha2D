@@ -1,7 +1,7 @@
 package net.sixunderscore.mocha2d.graphics;
 
 import org.lwjgl.PointerBuffer;
-import org.lwjgl.glfw.GLFWVulkan;
+import org.lwjgl.sdl.SDLVulkan;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.util.vma.Vma;
 import org.lwjgl.util.vma.VmaAllocatorCreateInfo;
@@ -18,15 +18,13 @@ public class RenderContext {
     private static VkQueue graphicsQueue;
     private static long allocator;
 
-    public static void init() {
-        try (MemoryStack stack = MemoryStack.stackPush()) {
-            instance = createInstance(stack);
-            VkPhysicalDevice physicalDevice = pickPhysicalDevice(stack);
-            graphicsQueueFamilyIndex = findGraphicsQueueFamilyIndex(stack, physicalDevice);
-            logicalDevice = createLogicalDevice(stack, physicalDevice);
-            graphicsQueue = obtainGraphicsQueue(stack);
-            allocator = createVmaAllocator(stack, physicalDevice);
-        }
+    public static void init(MemoryStack stack) {
+        instance = createInstance(stack);
+        VkPhysicalDevice physicalDevice = pickPhysicalDevice(stack);
+        graphicsQueueFamilyIndex = findGraphicsQueueFamilyIndex(stack, physicalDevice);
+        logicalDevice = createLogicalDevice(stack, physicalDevice);
+        graphicsQueue = obtainGraphicsQueue(stack);
+        allocator = createVmaAllocator(stack, physicalDevice);
     }
 
     private static VkInstance createInstance(MemoryStack stack) {
@@ -36,15 +34,15 @@ public class RenderContext {
                 .pEngineName(stack.UTF8("Mocha2D"))
                 .apiVersion(VK14.VK_API_VERSION_1_3);
 
-        PointerBuffer glfwExtensions = GLFWVulkan.glfwGetRequiredInstanceExtensions();
+        PointerBuffer sdlExtensions = SDLVulkan.SDL_Vulkan_GetInstanceExtensions();
 
-        if (glfwExtensions == null) {
+        if (sdlExtensions == null) {
             throw new IllegalStateException("GLFW Vulkan extensions not available");
         }
 
         // #start-debug
-        PointerBuffer allExtensions = stack.mallocPointer(glfwExtensions.remaining() + 1)
-                .put(glfwExtensions)
+        PointerBuffer allExtensions = stack.mallocPointer(sdlExtensions.remaining() + 1)
+                .put(sdlExtensions)
                 .put(stack.UTF8(EXTDebugUtils.VK_EXT_DEBUG_UTILS_EXTENSION_NAME))
                 .flip();
 
@@ -63,7 +61,7 @@ public class RenderContext {
         VkInstanceCreateInfo instanceCreateInfo = VkInstanceCreateInfo.calloc(stack)
                 .sType$Default()
                 .pApplicationInfo(applicationInfo)
-                .ppEnabledExtensionNames(glfwExtensions);
+                .ppEnabledExtensionNames(sdlExtensions);
         #end-release */
 
         PointerBuffer instancePtr = stack.mallocPointer(1);

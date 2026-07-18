@@ -7,7 +7,7 @@ import net.sixunderscore.mocha2d.graphics.resources.ResourceManager;
 import net.sixunderscore.mocha2d.graphics.resources.text.BitmapFont;
 import net.sixunderscore.mocha2d.graphics.resources.textures.TextureRegion;
 import net.sixunderscore.mocha2d.util.MathUtils;
-import org.lwjgl.glfw.GLFW;
+import org.lwjgl.sdl.SDLKeycode;
 
 public class SampleScreen implements Screen {
     private TextureRegion logoTexture;
@@ -19,17 +19,16 @@ public class SampleScreen implements Screen {
     public void init(ResourceManager resourceManager) {
         this.logoTexture = resourceManager.getFullTexture("logo");
         this.bitmapFont = resourceManager.getBitmapFont("roboto");
-
         this.t = 0;
         this.rotationScalar = 0.6f;
     }
 
     @Override
-    public void onKeyPressed(int keycode, int scancode, int action, int mods) {
-        if (keycode == GLFW.GLFW_KEY_R) {
-            if (action == GLFW.GLFW_PRESS) {
+    public void onKeyPressed(int keycode, int scancode, boolean pressed, short mods) {
+        if (keycode == SDLKeycode.SDLK_R) {
+            if (pressed) {
                 this.rotationScalar = 1.5f;
-            } else if (action == GLFW.GLFW_RELEASE) {
+            } else {
                 this.rotationScalar = 0.6f;
             }
         }
