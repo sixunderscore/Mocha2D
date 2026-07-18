@@ -37,7 +37,7 @@ public class RenderContext {
         PointerBuffer sdlExtensions = SDLVulkan.SDL_Vulkan_GetInstanceExtensions();
 
         if (sdlExtensions == null) {
-            throw new IllegalStateException("GLFW Vulkan extensions not available");
+            throw new IllegalStateException("SDL Vulkan extensions not available");
         }
 
         // #start-debug
