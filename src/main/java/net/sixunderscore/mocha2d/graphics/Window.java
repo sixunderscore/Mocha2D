@@ -93,8 +93,9 @@ public class Window {
                     return false;
                 }
                 case SDLEvents.SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED -> {
-                    width = event.window().data1();
-                    height = event.window().data2();
+                    SDL_WindowEvent window = event.window();
+                    width = window.data1();
+                    height = window.data2();
                     camera.adjustProjection();
                     screen.onWindowResized();
                     renderSystem.onWindowResized();
