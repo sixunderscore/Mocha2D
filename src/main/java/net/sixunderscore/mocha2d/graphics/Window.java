@@ -52,7 +52,7 @@ public class Window {
             fbHeight = newHeight;
             camera.adjustProjection();
             screen.onWindowResized();
-            renderSystem.onWindowResize();
+            renderSystem.onWindowResized();
         });
 
         GLFW.glfwGetWindowSize(window, widthArr, heightArr);
