@@ -1,4 +1,4 @@
-package net.sixunderscore.mocha2d.graphics;
+package net.sixunderscore.mocha2d.util;
 
 import net.sixunderscore.mocha2d.graphics.render.BatchRenderer;
 import net.sixunderscore.mocha2d.graphics.resources.ResourceManager;

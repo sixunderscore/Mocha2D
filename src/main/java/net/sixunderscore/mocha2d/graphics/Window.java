@@ -1,6 +1,8 @@
 package net.sixunderscore.mocha2d.graphics;
 
 import net.sixunderscore.mocha2d.graphics.resources.textures.TextureData;
+import net.sixunderscore.mocha2d.graphics.util.OrthographicCamera;
+import net.sixunderscore.mocha2d.util.Screen;
 import net.sixunderscore.mocha2d.util.*;
 import org.lwjgl.sdl.*;
 import org.lwjgl.system.MemoryStack;
@@ -26,10 +28,6 @@ public class Window {
     }
 
     private static void init(WindowSettings settings, Screen initialScreen) {
-        if (!SDLInit.SDL_Init(SDLInit.SDL_INIT_VIDEO)) {
-            throw new IllegalStateException("Failed to initialize SDL");
-        }
-
         long flags = SDLVideo.SDL_WINDOW_HIGH_PIXEL_DENSITY | SDLVideo.SDL_WINDOW_VULKAN;
         if (settings.isResizeable()) {
             flags |= SDLVideo.SDL_WINDOW_RESIZABLE;
@@ -56,7 +54,7 @@ public class Window {
             camera = new OrthographicCamera();
             fpsHelper = new FpsHelper(settings.getFpsCap());
             deltaTime = new DeltaTime();
-            renderSystem = new RenderSystem(stack, window, settings.getTextureFiles(), settings.getTtfFiles());
+            renderSystem = new RenderSystem(stack, settings.getGpu(), window, settings.getTextureFiles(), settings.getTtfFiles());
         }
 
         byte[] clearColor = settings.getClearColor();
@@ -126,7 +124,7 @@ public class Window {
         return true;
     }
 
-    private static void setWindowIcon(String path) {
+    public static void setWindowIcon(String path) {
         if (!path.isEmpty()) {
             try (TextureData textureData = ResourceUtils.loadAndDecodeImage(path)) {
                 SDL_Surface surface = SDLSurface.SDL_CreateSurfaceFrom(

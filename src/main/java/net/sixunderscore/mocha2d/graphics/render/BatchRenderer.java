@@ -8,7 +8,7 @@ import net.sixunderscore.mocha2d.util.ColorUtils;
 import net.sixunderscore.mocha2d.util.MathUtils;
 import net.sixunderscore.mocha2d.graphics.util.*;
 import net.sixunderscore.mocha2d.graphics.RenderContext;
-import net.sixunderscore.mocha2d.graphics.OrthographicCamera;
+import net.sixunderscore.mocha2d.graphics.util.OrthographicCamera;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.vulkan.*;

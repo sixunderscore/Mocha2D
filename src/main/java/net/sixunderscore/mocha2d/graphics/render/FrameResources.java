@@ -1,6 +1,6 @@
 package net.sixunderscore.mocha2d.graphics.render;
 
-import net.sixunderscore.mocha2d.graphics.OrthographicCamera;
+import net.sixunderscore.mocha2d.graphics.util.OrthographicCamera;
 import net.sixunderscore.mocha2d.graphics.resources.ResourceManager;
 import net.sixunderscore.mocha2d.graphics.resources.textures.TextureRegion;
 import net.sixunderscore.mocha2d.util.ColorUtils;

@@ -1,5 +1,6 @@
 package net.sixunderscore.mocha2d.util;
 
+import net.sixunderscore.mocha2d.graphics.GPU;
 import net.sixunderscore.mocha2d.graphics.resources.TextureFile;
 import net.sixunderscore.mocha2d.graphics.resources.TtfFile;
 
@@ -13,6 +14,7 @@ public class WindowSettings {
     private boolean resizeable;
     private int fpsCap;
     private final byte[] clearColor;
+    private GPU gpu;
 
     public WindowSettings() {
         this.textureFiles = new TextureFile[0];
@@ -24,6 +26,7 @@ public class WindowSettings {
         this.resizeable = true;
         this.fpsCap = 1000;
         this.clearColor = new byte[]{(byte) 0, (byte) 0, (byte) 0};
+        this.gpu = null;
     }
 
     public void setTextureFiles(TextureFile... textureFiles) {
@@ -61,6 +64,18 @@ public class WindowSettings {
         this.clearColor[2] = b;
     }
 
+    public void setGpu(GPU gpu) {
+        this.gpu = gpu;
+    }
+
+    public TextureFile[] getTextureFiles() {
+        return this.textureFiles;
+    }
+
+    public TtfFile[] getTtfFiles() {
+        return this.ttfFiles;
+    }
+
     public String getWindowName() {
         return this.windowName;
     }
@@ -85,15 +100,11 @@ public class WindowSettings {
         return this.fpsCap;
     }
 
-    public TextureFile[] getTextureFiles() {
-        return this.textureFiles;
-    }
-
-    public TtfFile[] getTtfFiles() {
-        return this.ttfFiles;
-    }
-
     public byte[] getClearColor() {
         return this.clearColor;
+    }
+
+    public GPU getGpu() {
+        return this.gpu;
     }
 }

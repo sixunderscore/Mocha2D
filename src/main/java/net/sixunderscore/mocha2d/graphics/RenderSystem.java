@@ -4,6 +4,8 @@ import net.sixunderscore.mocha2d.graphics.render.BatchRenderer;
 import net.sixunderscore.mocha2d.graphics.resources.ResourceManager;
 import net.sixunderscore.mocha2d.graphics.resources.TextureFile;
 import net.sixunderscore.mocha2d.graphics.resources.TtfFile;
+import net.sixunderscore.mocha2d.graphics.util.OrthographicCamera;
+import net.sixunderscore.mocha2d.util.Screen;
 import net.sixunderscore.mocha2d.graphics.util.SwapChain;
 import net.sixunderscore.mocha2d.graphics.util.ViewportScissor;
 import org.lwjgl.sdl.SDLVulkan;
@@ -20,8 +22,8 @@ public class RenderSystem implements AutoCloseable {
     private final ResourceManager resourceManager;
     private final BatchRenderer batch;
 
-    public RenderSystem(MemoryStack stack, long window, TextureFile[] textureFiles, TtfFile[] ttfFiles) {
-        RenderContext.init(stack);
+    public RenderSystem(MemoryStack stack, GPU gpu, long window, TextureFile[] textureFiles, TtfFile[] ttfFiles) {
+        RenderContext.init(stack, gpu);
 
         LongBuffer surfaceBuff = stack.mallocLong(1);
         if (!SDLVulkan.SDL_Vulkan_CreateSurface(window, RenderContext.getInstance(), null, surfaceBuff)) {
