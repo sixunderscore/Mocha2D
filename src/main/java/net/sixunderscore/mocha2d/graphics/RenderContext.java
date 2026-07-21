@@ -1,7 +1,6 @@
 package net.sixunderscore.mocha2d.graphics;
 
 import org.lwjgl.PointerBuffer;
-import org.lwjgl.sdl.SDLInit;
 import org.lwjgl.sdl.SDLVulkan;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.util.vma.Vma;
@@ -11,110 +10,111 @@ import org.lwjgl.vulkan.*;
 
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
-import java.util.ArrayList;
-import java.util.List;
 
 public class RenderContext {
-    private static final VkInstance instance = createInstance();
+    private static VkInstance instance;
     private static int graphicsQueueFamilyIndex;
     private static VkDevice logicalDevice;
     private static VkQueue graphicsQueue;
     private static long allocator;
 
-    public static void init(MemoryStack stack, GPU gpu) {
-        VkPhysicalDevice physicalDevice = gpu == null ? pickPhysicalDevice() : gpu.getHandle();
+    public static void init(MemoryStack stack) {
+        instance = createInstance(stack);
+        VkPhysicalDevice physicalDevice = pickPhysicalDevice(stack);
         graphicsQueueFamilyIndex = findGraphicsQueueFamilyIndex(stack, physicalDevice);
         logicalDevice = createLogicalDevice(stack, physicalDevice);
         graphicsQueue = obtainGraphicsQueue(stack);
         allocator = createVmaAllocator(stack, physicalDevice);
     }
 
-    private static VkInstance createInstance() {
-        try (MemoryStack stack = MemoryStack.stackPush()) {
-            VkApplicationInfo applicationInfo = VkApplicationInfo.calloc(stack)
-                    .sType$Default()
-                    .pApplicationName(stack.UTF8("Mocha2D"))
-                    .pEngineName(stack.UTF8("Mocha2D"))
-                    .apiVersion(VK14.VK_API_VERSION_1_3);
+    private static VkInstance createInstance(MemoryStack stack) {
+        VkApplicationInfo applicationInfo = VkApplicationInfo.calloc(stack)
+                .sType$Default()
+                .pApplicationName(stack.UTF8("Mocha2D"))
+                .pEngineName(stack.UTF8("Mocha2D"))
+                .apiVersion(VK14.VK_API_VERSION_1_3);
 
-            if (!SDLInit.SDL_Init(SDLInit.SDL_INIT_VIDEO)) {
-                throw new IllegalStateException("Failed to initialize SDL");
-            }
-
-            PointerBuffer sdlExtensions = SDLVulkan.SDL_Vulkan_GetInstanceExtensions();
-            if (sdlExtensions == null) {
-                throw new IllegalStateException("SDL Vulkan extensions not available");
-            }
-
-            // #start-debug
-            PointerBuffer allExtensions = stack.mallocPointer(sdlExtensions.remaining() + 1)
-                    .put(sdlExtensions)
-                    .put(stack.UTF8(EXTDebugUtils.VK_EXT_DEBUG_UTILS_EXTENSION_NAME))
-                    .flip();
-
-            PointerBuffer validationLayers = stack.mallocPointer(1)
-                    .put(stack.UTF8("VK_LAYER_KHRONOS_validation"))
-                    .flip();
-
-            VkInstanceCreateInfo instanceCreateInfo = VkInstanceCreateInfo.calloc(stack)
-                    .sType$Default()
-                    .pApplicationInfo(applicationInfo)
-                    .ppEnabledExtensionNames(allExtensions)
-                    .ppEnabledLayerNames(validationLayers);
-            // #end-debug
-
-            /* #start-release
-            VkInstanceCreateInfo instanceCreateInfo = VkInstanceCreateInfo.calloc(stack)
-                    .sType$Default()
-                    .pApplicationInfo(applicationInfo)
-                    .ppEnabledExtensionNames(sdlExtensions);
-            #end-release */
-
-            PointerBuffer instancePtr = stack.mallocPointer(1);
-            if (VK14.vkCreateInstance(instanceCreateInfo, null, instancePtr) != VK14.VK_SUCCESS) {
-                throw new IllegalStateException("Failed to create Vulkan Instance");
-            }
-
-            // #start-debug
-            VkInstance instance = new VkInstance(instancePtr.get(0), instanceCreateInfo);
-            VulkanErrorHandling.createDebugMessenger(stack, instance);
-            return instance;
-            // #end-debug
-
-            /* #start-release
-            return new VkInstance(instancePtr.get(0), instanceCreateInfo);
-            #end-release */
+        PointerBuffer sdlExtensions = SDLVulkan.SDL_Vulkan_GetInstanceExtensions();
+        if (sdlExtensions == null) {
+            throw new IllegalStateException("SDL Vulkan extensions not available");
         }
+
+        // #start-debug
+        PointerBuffer allExtensions = stack.mallocPointer(sdlExtensions.remaining() + 1)
+                .put(sdlExtensions)
+                .put(stack.UTF8(EXTDebugUtils.VK_EXT_DEBUG_UTILS_EXTENSION_NAME))
+                .flip();
+
+        PointerBuffer validationLayers = stack.mallocPointer(1)
+                .put(stack.UTF8("VK_LAYER_KHRONOS_validation"))
+                .flip();
+
+        VkInstanceCreateInfo instanceCreateInfo = VkInstanceCreateInfo.calloc(stack)
+                .sType$Default()
+                .pApplicationInfo(applicationInfo)
+                .ppEnabledExtensionNames(allExtensions)
+                .ppEnabledLayerNames(validationLayers);
+        // #end-debug
+
+        /* #start-release
+        VkInstanceCreateInfo instanceCreateInfo = VkInstanceCreateInfo.calloc(stack)
+                .sType$Default()
+                .pApplicationInfo(applicationInfo)
+                .ppEnabledExtensionNames(sdlExtensions);
+        #end-release */
+
+        PointerBuffer instancePtr = stack.mallocPointer(1);
+        if (VK14.vkCreateInstance(instanceCreateInfo, null, instancePtr) != VK14.VK_SUCCESS) {
+            throw new IllegalStateException("Failed to create Vulkan Instance");
+        }
+
+        // #start-debug
+        VkInstance instance = new VkInstance(instancePtr.get(0), instanceCreateInfo);
+        VulkanErrorHandling.createDebugMessenger(stack, instance);
+        return instance;
+        // #end-debug
+
+        /* #start-release
+        return new VkInstance(instancePtr.get(0), instanceCreateInfo);
+        #end-release */
     }
 
-    public static List<GPU> listAvailableGPUs() {
-        try (MemoryStack stack = MemoryStack.stackPush()) {
-            IntBuffer countBuff = stack.mallocInt(1);
-            VK14.vkEnumeratePhysicalDevices(instance, countBuff, null);
-            int count = countBuff.get(0);
+    private static VkPhysicalDevice pickPhysicalDevice(MemoryStack stack) {
+        IntBuffer countBuff = stack.mallocInt(1);
+        VK14.vkEnumeratePhysicalDevices(instance, countBuff, null);
+        int count = countBuff.get(0);
 
-            if (count == 0) {
-                throw new IllegalStateException("No Vulkan-Supporting GPUs found");
-            }
+        if (count == 0) {
+            throw new IllegalStateException("No Vulkan-Supporting GPUs found");
+        }
 
-            List<GPU> gpus = new ArrayList<>(count);
-            PointerBuffer devices = stack.mallocPointer(count);
-            VK14.vkEnumeratePhysicalDevices(instance, countBuff, devices);
+        VkPhysicalDevice fallback = null;
 
-            VkPhysicalDeviceProperties properties = VkPhysicalDeviceProperties.calloc(stack);
+        PointerBuffer devices = stack.mallocPointer(count);
+        VK14.vkEnumeratePhysicalDevices(instance, countBuff, devices);
 
-            for (int i = 0; i < count; ++i) {
-                VkPhysicalDevice device = new VkPhysicalDevice(devices.get(i), instance);
-                VK14.vkGetPhysicalDeviceProperties(device, properties);
+        VkPhysicalDeviceProperties properties = VkPhysicalDeviceProperties.calloc(stack);
 
-                if (gpuSupportsSwapChain(stack, device)) {
-                    boolean isIntegrated = properties.deviceType() == VK14.VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU;
-                    gpus.add(new GPU(device, properties.deviceNameString(), isIntegrated));
+        for (int i = 0; i < count; ++i) {
+            VkPhysicalDevice device = new VkPhysicalDevice(devices.get(i), instance);
+            VK14.vkGetPhysicalDeviceProperties(device, properties);
+
+            if (gpuSupportsSwapChain(stack, device)) {
+                int type = properties.deviceType();
+
+                if (type == VK14.VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
+                    return device;
+                } else {
+                    fallback = device;
                 }
             }
-
-            return gpus;
         }
+
+        if (fallback != null) {
+            return fallback;
+        }
+
+        throw new IllegalStateException("No SwapChain-Supporting GPU found");
     }
 
     private static boolean gpuSupportsSwapChain(MemoryStack stack, VkPhysicalDevice physicalDevice) {
@@ -132,25 +132,6 @@ public class RenderContext {
 
             return false;
         }
-    }
-
-    private static VkPhysicalDevice pickPhysicalDevice() {
-        List<GPU> gpus = listAvailableGPUs();
-        VkPhysicalDevice integratedGpu = null;
-
-        for (GPU gpu : gpus) {
-            if (gpu.isIntegrated()) {
-                integratedGpu = gpu.getHandle();
-            } else {
-                return gpu.getHandle();
-            }
-        }
-
-        if (integratedGpu != null) {
-            return integratedGpu;
-        }
-
-        throw new IllegalStateException("No SwapChain-Supporting GPU found");
     }
 
     private static int findGraphicsQueueFamilyIndex(MemoryStack stack, VkPhysicalDevice physicalDevice) {

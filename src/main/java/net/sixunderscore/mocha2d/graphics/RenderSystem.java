@@ -22,8 +22,8 @@ public class RenderSystem implements AutoCloseable {
     private final ResourceManager resourceManager;
     private final BatchRenderer batch;
 
-    public RenderSystem(MemoryStack stack, GPU gpu, long window, TextureFile[] textureFiles, TtfFile[] ttfFiles) {
-        RenderContext.init(stack, gpu);
+    public RenderSystem(MemoryStack stack, long window, TextureFile[] textureFiles, TtfFile[] ttfFiles) {
+        RenderContext.init(stack);
 
         LongBuffer surfaceBuff = stack.mallocLong(1);
         if (!SDLVulkan.SDL_Vulkan_CreateSurface(window, RenderContext.getInstance(), null, surfaceBuff)) {
