@@ -29,14 +29,10 @@ public class WindowSettings {
         this.clearColor = new byte[]{(byte) 0, (byte) 0, (byte) 0};
         this.initialScreen = new Screen() {
             @Override
-            public void init(ResourceManager resourceManager) {
-
-            }
+            public void init(ResourceManager resourceManager) {}
 
             @Override
-            public void render(BatchRenderer batch) {
-
-            }
+            public void render(BatchRenderer batch) {}
         };
     }
 
