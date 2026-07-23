@@ -107,7 +107,7 @@ public class Window {
                 case SDLEvents.SDL_EVENT_MOUSE_MOTION -> {
                     SDL_MouseMotionEvent motion = event.motion();
                     float x = motion.x() * displayScale;
-                    float y = Window.getHeight() - (motion.y() * displayScale);
+                    float y = height - (motion.y() * displayScale);
                     screen.onMouseMoved(x, y);
                 }
                 case SDLEvents.SDL_EVENT_MOUSE_BUTTON_UP, SDLEvents.SDL_EVENT_MOUSE_BUTTON_DOWN -> {
