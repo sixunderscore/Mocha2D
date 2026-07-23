@@ -14,6 +14,7 @@ public class Main {
         windowSettings.setTtfFiles(
                 new TtfFile("sample_assets/fonts/Roboto-Regular.ttf", 64, "roboto")
         );
-        Window.start(windowSettings, new SampleScreen());
+        windowSettings.setInitialScreen(new SampleScreen());
+        Window.start(windowSettings);
     }
 }

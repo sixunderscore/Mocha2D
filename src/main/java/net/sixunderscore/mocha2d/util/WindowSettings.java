@@ -1,5 +1,7 @@
 package net.sixunderscore.mocha2d.util;
 
+import net.sixunderscore.mocha2d.graphics.render.BatchRenderer;
+import net.sixunderscore.mocha2d.graphics.resources.ResourceManager;
 import net.sixunderscore.mocha2d.graphics.resources.TextureFile;
 import net.sixunderscore.mocha2d.graphics.resources.TtfFile;
 
@@ -13,6 +15,7 @@ public class WindowSettings {
     private boolean resizeable;
     private int fpsCap;
     private final byte[] clearColor;
+    private Screen initialScreen;
 
     public WindowSettings() {
         this.textureFiles = new TextureFile[0];
@@ -24,6 +27,17 @@ public class WindowSettings {
         this.resizeable = true;
         this.fpsCap = 1000;
         this.clearColor = new byte[]{(byte) 0, (byte) 0, (byte) 0};
+        this.initialScreen = new Screen() {
+            @Override
+            public void init(ResourceManager resourceManager) {
+
+            }
+
+            @Override
+            public void render(BatchRenderer batch) {
+
+            }
+        };
     }
 
     public void setTextureFiles(TextureFile... textureFiles) {
@@ -61,6 +75,10 @@ public class WindowSettings {
         this.clearColor[2] = b;
     }
 
+    public void setInitialScreen(Screen initialScreen) {
+        this.initialScreen = initialScreen;
+    }
+
     public TextureFile[] getTextureFiles() {
         return this.textureFiles;
     }
@@ -95,5 +113,9 @@ public class WindowSettings {
 
     public byte[] getClearColor() {
         return this.clearColor;
+    }
+
+    public Screen getInitialScreen() {
+        return this.initialScreen;
     }
 }

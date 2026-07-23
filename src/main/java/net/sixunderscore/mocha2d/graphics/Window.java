@@ -21,13 +21,13 @@ public class Window {
     private static FpsHelper fpsHelper;
     private static DeltaTime deltaTime;
 
-    public static void start(WindowSettings settings, Screen initialScreen) {
-        init(settings, initialScreen);
+    public static void start(WindowSettings settings) {
+        init(settings);
         loop();
         cleanUp();
     }
 
-    private static void init(WindowSettings settings, Screen initialScreen) {
+    private static void init(WindowSettings settings) {
         if (!SDLInit.SDL_Init(SDLInit.SDL_INIT_VIDEO)) {
             throw new IllegalStateException("Failed to initialize SDL");
         }
@@ -54,7 +54,7 @@ public class Window {
 
             setWindowIcon(settings.getWindowIconPath());
 
-            screen = initialScreen;
+            screen = settings.getInitialScreen();
             camera = new OrthographicCamera();
             fpsHelper = new FpsHelper(settings.getFpsCap());
             deltaTime = new DeltaTime();
