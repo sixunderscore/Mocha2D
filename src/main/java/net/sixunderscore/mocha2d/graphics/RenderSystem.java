@@ -1,5 +1,6 @@
 package net.sixunderscore.mocha2d.graphics;
 
+import net.sixunderscore.mocha2d.Mocha2D;
 import net.sixunderscore.mocha2d.graphics.render.BatchRenderer;
 import net.sixunderscore.mocha2d.graphics.resources.ResourceManager;
 import net.sixunderscore.mocha2d.graphics.resources.TextureFile;
@@ -22,17 +23,18 @@ public class RenderSystem implements AutoCloseable {
     private final ResourceManager resourceManager;
     private final BatchRenderer batch;
 
-    public RenderSystem(MemoryStack stack, long window, TextureFile[] textureFiles, TtfFile[] ttfFiles) {
-        RenderContext.init(stack);
+    public RenderSystem(long window, TextureFile[] textureFiles, TtfFile[] ttfFiles) {
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            LongBuffer surfaceBuff = stack.mallocLong(1);
+            if (!SDLVulkan.SDL_Vulkan_CreateSurface(window, Mocha2D.RENDER_CONTEXT.getInstance(), null, surfaceBuff)) {
+                throw new IllegalStateException("Failed to create Vulkan surface");
+            }
 
-        LongBuffer surfaceBuff = stack.mallocLong(1);
-        if (!SDLVulkan.SDL_Vulkan_CreateSurface(window, RenderContext.getInstance(), null, surfaceBuff)) {
-            throw new IllegalStateException("Failed to create Vulkan surface");
+            this.windowSurface = surfaceBuff.get(0);
         }
 
-        this.windowSurface = surfaceBuff.get(0);
         this.viewportScissor = new ViewportScissor();
-        this.swapChain = new SwapChain(windowSurface, viewportScissor.getScissor().extent());
+        this.swapChain = new SwapChain(this.windowSurface, this.viewportScissor.getScissor().extent());
         this.shouldRebuildSwapChain = false;
         this.resourceManager = new ResourceManager(textureFiles, ttfFiles);
         this.batch = new BatchRenderer(this.resourceManager, this.swapChain);
@@ -67,7 +69,6 @@ public class RenderSystem implements AutoCloseable {
         this.resourceManager.close();
         this.viewportScissor.close();
         this.swapChain.close();
-        KHRSurface.vkDestroySurfaceKHR(RenderContext.getInstance(), this.windowSurface, null);
-        RenderContext.cleanUp();
+        KHRSurface.vkDestroySurfaceKHR(Mocha2D.RENDER_CONTEXT.getInstance(), this.windowSurface, null);
     }
 }

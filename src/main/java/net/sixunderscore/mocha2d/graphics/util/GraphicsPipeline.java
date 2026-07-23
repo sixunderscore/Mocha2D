@@ -1,8 +1,8 @@
 package net.sixunderscore.mocha2d.graphics.util;
 
+import net.sixunderscore.mocha2d.Mocha2D;
 import net.sixunderscore.mocha2d.graphics.render.VertexData;
 import net.sixunderscore.mocha2d.graphics.resources.ResourceManager;
-import net.sixunderscore.mocha2d.graphics.RenderContext;
 import net.sixunderscore.mocha2d.util.ResourceUtils;
 import org.joml.Matrix4f;
 import org.lwjgl.system.MemoryStack;
@@ -31,7 +31,7 @@ public class GraphicsPipeline implements AutoCloseable {
                 .pPushConstantRanges(pushConstantRanges);
 
         LongBuffer pipeLineLayoutBuff = stack.mallocLong(1);
-        if (VK14.vkCreatePipelineLayout(RenderContext.getLogicalDevice(), layoutCreateInfo, null, pipeLineLayoutBuff) != VK14.VK_SUCCESS) {
+        if (VK14.vkCreatePipelineLayout(Mocha2D.RENDER_CONTEXT.getLogicalDevice(), layoutCreateInfo, null, pipeLineLayoutBuff) != VK14.VK_SUCCESS) {
             throw new IllegalStateException("Failed to create pipeline layout");
         }
 
@@ -141,12 +141,12 @@ public class GraphicsPipeline implements AutoCloseable {
                 .layout(this.pipelineLayout);
 
         LongBuffer pipelineBuff = stack.mallocLong(1);
-        if (VK14.vkCreateGraphicsPipelines(RenderContext.getLogicalDevice(), VK14.VK_NULL_HANDLE, pipelineCreateInfo, null, pipelineBuff) != VK14.VK_SUCCESS) {
+        if (VK14.vkCreateGraphicsPipelines(Mocha2D.RENDER_CONTEXT.getLogicalDevice(), VK14.VK_NULL_HANDLE, pipelineCreateInfo, null, pipelineBuff) != VK14.VK_SUCCESS) {
             throw new IllegalStateException("Failed to create graphics pipeline");
         }
 
-        VK14.vkDestroyShaderModule(RenderContext.getLogicalDevice(), vertexShader, null);
-        VK14.vkDestroyShaderModule(RenderContext.getLogicalDevice(), fragmentShader, null);
+        VK14.vkDestroyShaderModule(Mocha2D.RENDER_CONTEXT.getLogicalDevice(), vertexShader, null);
+        VK14.vkDestroyShaderModule(Mocha2D.RENDER_CONTEXT.getLogicalDevice(), fragmentShader, null);
 
         return pipelineBuff.get(0);
     }
@@ -157,7 +157,7 @@ public class GraphicsPipeline implements AutoCloseable {
                 .pCode(shaderCode);
 
         LongBuffer shaderBuff = stack.mallocLong(1);
-        if (VK14.vkCreateShaderModule(RenderContext.getLogicalDevice(), shaderCreateInfo, null, shaderBuff) != VK14.VK_SUCCESS) {
+        if (VK14.vkCreateShaderModule(Mocha2D.RENDER_CONTEXT.getLogicalDevice(), shaderCreateInfo, null, shaderBuff) != VK14.VK_SUCCESS) {
             throw new IllegalStateException("Failed to create shader module");
         }
 
@@ -174,7 +174,7 @@ public class GraphicsPipeline implements AutoCloseable {
 
     @Override
     public void close() {
-        VK14.vkDestroyPipelineLayout(RenderContext.getLogicalDevice(), this.pipelineLayout, null);
-        VK14.vkDestroyPipeline(RenderContext.getLogicalDevice(), this.pipeline, null);
+        VK14.vkDestroyPipelineLayout(Mocha2D.RENDER_CONTEXT.getLogicalDevice(), this.pipelineLayout, null);
+        VK14.vkDestroyPipeline(Mocha2D.RENDER_CONTEXT.getLogicalDevice(), this.pipeline, null);
     }
 }

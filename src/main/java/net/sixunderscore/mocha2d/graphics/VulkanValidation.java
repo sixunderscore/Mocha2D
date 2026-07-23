@@ -1,11 +1,12 @@
 package net.sixunderscore.mocha2d.graphics;
 
+import net.sixunderscore.mocha2d.Mocha2D;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.*;
 
 import java.nio.LongBuffer;
 
-public class VulkanErrorHandling {
+public class VulkanValidation {
     private static long debugMessengerHandle;
 
     public static void createDebugMessenger(MemoryStack stack, VkInstance vkInstance) {
@@ -22,7 +23,7 @@ public class VulkanErrorHandling {
                                 EXTDebugUtils.VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
                                 EXTDebugUtils.VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT
                 )
-                .pfnUserCallback(VulkanErrorHandling::errorCallback);
+                .pfnUserCallback(VulkanValidation::errorCallback);
 
         LongBuffer debugMessengerBuffer = stack.mallocLong(1);
         if (EXTDebugUtils.vkCreateDebugUtilsMessengerEXT(vkInstance, debugCreateInfo, null, debugMessengerBuffer) != VK14.VK_SUCCESS) {
@@ -68,7 +69,7 @@ public class VulkanErrorHandling {
 
     public static void cleanUp() {
         if (debugMessengerHandle != 0) {
-            EXTDebugUtils.vkDestroyDebugUtilsMessengerEXT(RenderContext.getInstance(), debugMessengerHandle, null);
+            EXTDebugUtils.vkDestroyDebugUtilsMessengerEXT(Mocha2D.RENDER_CONTEXT.getInstance(), debugMessengerHandle, null);
         }
     }
 }

@@ -1,5 +1,6 @@
 package net.sixunderscore.mocha2d.graphics.render;
 
+import net.sixunderscore.mocha2d.Mocha2D;
 import net.sixunderscore.mocha2d.graphics.resources.ResourceManager;
 import net.sixunderscore.mocha2d.graphics.resources.text.BitmapFont;
 import net.sixunderscore.mocha2d.graphics.resources.text.GlyphData;
@@ -7,7 +8,6 @@ import net.sixunderscore.mocha2d.graphics.resources.textures.TextureRegion;
 import net.sixunderscore.mocha2d.util.ColorUtils;
 import net.sixunderscore.mocha2d.util.MathUtils;
 import net.sixunderscore.mocha2d.graphics.util.*;
-import net.sixunderscore.mocha2d.graphics.RenderContext;
 import net.sixunderscore.mocha2d.graphics.util.OrthographicCamera;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
@@ -179,13 +179,13 @@ public class BatchRenderer implements AutoCloseable {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             long inFlightFence = this.inFlightFences[this.frameInFlightIndex];
 
-            VK14.vkWaitForFences(RenderContext.getLogicalDevice(), inFlightFence, true, Long.MAX_VALUE);
-            VK14.vkResetFences(RenderContext.getLogicalDevice(), inFlightFence);
+            VK14.vkWaitForFences(Mocha2D.RENDER_CONTEXT.getLogicalDevice(), inFlightFence, true, Long.MAX_VALUE);
+            VK14.vkResetFences(Mocha2D.RENDER_CONTEXT.getLogicalDevice(), inFlightFence);
 
             long imageAvailableSemaphore = this.imageAvailableSemaphores[this.frameInFlightIndex];
 
             int errCode = KHRSwapchain.vkAcquireNextImageKHR(
-                    RenderContext.getLogicalDevice(),
+                    Mocha2D.RENDER_CONTEXT.getLogicalDevice(),
                     swapChain.getSwapChain(),
                     Long.MAX_VALUE,
                     imageAvailableSemaphore,
@@ -209,7 +209,7 @@ public class BatchRenderer implements AutoCloseable {
                         .pWaitSemaphores(stack.mallocLong(1).put(0, renderFinishedSemaphore))
                         .pSwapchains(stack.mallocLong(1).put(0, swapChain.getSwapChain()))
                         .swapchainCount(1);
-                KHRSwapchain.vkQueuePresentKHR(RenderContext.getGraphicsQueue(), presentInfo);
+                KHRSwapchain.vkQueuePresentKHR(Mocha2D.RENDER_CONTEXT.getGraphicsQueue(), presentInfo);
 
                 this.frameInFlightIndex = ++this.frameInFlightIndex % this.framesInFlight;
             }
@@ -231,10 +231,10 @@ public class BatchRenderer implements AutoCloseable {
 
     @Override
     public void close() {
-        VkDevice logicalDevice = RenderContext.getLogicalDevice();
+        VkDevice logicalDevice = Mocha2D.RENDER_CONTEXT.getLogicalDevice();
 
         VK14.vkWaitForFences(logicalDevice, this.inFlightFences, true, Long.MAX_VALUE);
-        VK14.vkQueueWaitIdle(RenderContext.getGraphicsQueue());
+        VK14.vkQueueWaitIdle(Mocha2D.RENDER_CONTEXT.getGraphicsQueue());
 
         for (int i = 0; i < this.framesInFlight; ++i) {
             this.frameResources[i].close();

@@ -1,6 +1,6 @@
 package net.sixunderscore.mocha2d.graphics.util;
 
-import net.sixunderscore.mocha2d.graphics.Window;
+import net.sixunderscore.mocha2d.Mocha2D;
 import org.lwjgl.vulkan.VkExtent2D;
 import org.lwjgl.vulkan.VkOffset2D;
 import org.lwjgl.vulkan.VkRect2D;
@@ -11,8 +11,8 @@ public class ViewportScissor implements AutoCloseable {
     private final VkRect2D.Buffer scissor;
 
     public ViewportScissor() {
-        int width = Window.getWidth();
-        int height = Window.getHeight();
+        int width = Mocha2D.WINDOW.getWidth();
+        int height = Mocha2D.WINDOW.getHeight();
 
         this.viewport = VkViewport.malloc(1);
         this.viewport.get(0).set(0, 0, width, height, 0, 1);
@@ -24,8 +24,8 @@ public class ViewportScissor implements AutoCloseable {
     }
 
     public void update() {
-        int width = Window.getWidth();
-        int height = Window.getHeight();
+        int width = Mocha2D.WINDOW.getWidth();
+        int height = Mocha2D.WINDOW.getHeight();
 
         this.viewport.get(0).set(0, 0, width, height, 0, 1);
         this.scissor.get(0).extent().set(width, height);

@@ -2,31 +2,21 @@ package net.sixunderscore.mocha2d.util;
 
 import net.sixunderscore.mocha2d.graphics.render.BatchRenderer;
 import net.sixunderscore.mocha2d.graphics.resources.ResourceManager;
-import net.sixunderscore.mocha2d.graphics.resources.TextureFile;
-import net.sixunderscore.mocha2d.graphics.resources.TtfFile;
 
 public class WindowSettings {
-    private TextureFile[] textureFiles;
-    private TtfFile[] ttfFiles;
     private String windowName;
     private String windowIconPath;
     private int initialWidth;
     private int initialHeight;
     private boolean resizeable;
-    private int fpsCap;
-    private final byte[] clearColor;
     private Screen initialScreen;
 
     public WindowSettings() {
-        this.textureFiles = new TextureFile[0];
-        this.ttfFiles = new TtfFile[0];
         this.windowName = "Mocha2D Window";
         this.windowIconPath = "";
         this.initialWidth = 800;
         this.initialHeight = 500;
         this.resizeable = true;
-        this.fpsCap = 1000;
-        this.clearColor = new byte[]{(byte) 0, (byte) 0, (byte) 0};
         this.initialScreen = new Screen() {
             @Override
             public void init(ResourceManager resourceManager) {}
@@ -36,51 +26,30 @@ public class WindowSettings {
         };
     }
 
-    public void setTextureFiles(TextureFile... textureFiles) {
-        this.textureFiles = textureFiles;
-    }
-
-    public void setTtfFiles(TtfFile... ttfFiles) {
-        this.ttfFiles = ttfFiles;
-    }
-
-    public void setWindowName(String windowName) {
+    public WindowSettings setWindowName(String windowName) {
         this.windowName = windowName;
+        return this;
     }
 
-    public void setWindowIcon(String path) {
+    public WindowSettings setWindowIcon(String path) {
         this.windowIconPath = path;
+        return this;
     }
 
-    public void setDimensions(int initialWidth, int initialHeight) {
+    public WindowSettings setDimensions(int initialWidth, int initialHeight) {
         this.initialWidth = initialWidth;
         this.initialHeight = initialHeight;
+        return this;
     }
 
-    public void setResizeable(boolean resizeable) {
+    public WindowSettings setResizeable(boolean resizeable) {
         this.resizeable = resizeable;
+        return this;
     }
 
-    public void setFPSCap(int fpsCap) {
-        this.fpsCap = fpsCap;
-    }
-
-    public void setClearColor(byte r, byte g, byte b) {
-        this.clearColor[0] = r;
-        this.clearColor[1] = g;
-        this.clearColor[2] = b;
-    }
-
-    public void setInitialScreen(Screen initialScreen) {
+    public WindowSettings setInitialScreen(Screen initialScreen) {
         this.initialScreen = initialScreen;
-    }
-
-    public TextureFile[] getTextureFiles() {
-        return this.textureFiles;
-    }
-
-    public TtfFile[] getTtfFiles() {
-        return this.ttfFiles;
+        return this;
     }
 
     public String getWindowName() {
@@ -101,14 +70,6 @@ public class WindowSettings {
 
     public boolean isResizeable() {
         return this.resizeable;
-    }
-
-    public int getFpsCap() {
-        return this.fpsCap;
-    }
-
-    public byte[] getClearColor() {
-        return this.clearColor;
     }
 
     public Screen getInitialScreen() {

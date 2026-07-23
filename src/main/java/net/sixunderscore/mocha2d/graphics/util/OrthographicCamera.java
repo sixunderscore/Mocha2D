@@ -1,6 +1,6 @@
 package net.sixunderscore.mocha2d.graphics.util;
 
-import net.sixunderscore.mocha2d.graphics.Window;
+import net.sixunderscore.mocha2d.Mocha2D;
 import org.joml.Matrix4f;
 import org.lwjgl.system.MemoryUtil;
 
@@ -10,19 +10,19 @@ public class OrthographicCamera implements AutoCloseable {
     private final Matrix4f projectionViewMatrix;
     private final FloatBuffer projectionViewBuffer;
 
-    public OrthographicCamera() {
+    public OrthographicCamera(float initialWindowWidth, float initialWindowHeight) {
         this.projectionViewMatrix = new Matrix4f();
         this.projectionViewBuffer = MemoryUtil.memAllocFloat(16);
 
-        this.adjustProjection();
+        this.adjustProjection(initialWindowWidth, initialWindowHeight);
     }
 
-    public void adjustProjection() {
+    private void adjustProjection(float windowWidth, float windowHeight) {
         this.projectionViewMatrix
                 .identity()
                 .ortho(
-                        0, Window.getWidth(),
-                        Window.getHeight(), 0,
+                        0, windowWidth,
+                        windowHeight, 0,
                         0.1f, 100, true
                 ).lookAt(
                         0, 0, 20f,
@@ -31,6 +31,10 @@ public class OrthographicCamera implements AutoCloseable {
                 );
 
         this.projectionViewMatrix.get(this.projectionViewBuffer);
+    }
+
+    public void adjustProjection() {
+        this.adjustProjection(Mocha2D.WINDOW.getWidth(), Mocha2D.WINDOW.getHeight());
     }
 
     public FloatBuffer getBuffer() {

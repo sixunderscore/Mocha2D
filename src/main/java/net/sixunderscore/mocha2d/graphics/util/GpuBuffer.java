@@ -1,6 +1,6 @@
 package net.sixunderscore.mocha2d.graphics.util;
 
-import net.sixunderscore.mocha2d.graphics.RenderContext;
+import net.sixunderscore.mocha2d.Mocha2D;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.util.vma.Vma;
@@ -27,7 +27,7 @@ public class GpuBuffer implements AutoCloseable {
 
         LongBuffer bufferPtr = stack.mallocLong(1);
         PointerBuffer allocationPtr = stack.mallocPointer(1);
-        if (Vma.vmaCreateBuffer(RenderContext.getAllocator(), bufferCreateInfo, allocationCreateInfo, bufferPtr, allocationPtr, null) != VK14.VK_SUCCESS) {
+        if (Vma.vmaCreateBuffer(Mocha2D.RENDER_CONTEXT.getAllocator(), bufferCreateInfo, allocationCreateInfo, bufferPtr, allocationPtr, null) != VK14.VK_SUCCESS) {
             throw new IllegalStateException("Failed to create buffer");
         }
 
@@ -42,7 +42,7 @@ public class GpuBuffer implements AutoCloseable {
         }
 
         PointerBuffer mappedBufferPtr = stack.mallocPointer(1);
-        Vma.vmaMapMemory(RenderContext.getAllocator(), this.allocation, mappedBufferPtr);
+        Vma.vmaMapMemory(Mocha2D.RENDER_CONTEXT.getAllocator(), this.allocation, mappedBufferPtr);
         this.isMapped = true;
 
         return mappedBufferPtr.get(0);
@@ -55,9 +55,9 @@ public class GpuBuffer implements AutoCloseable {
     @Override
     public void close() {
         if (this.isMapped) {
-            Vma.vmaUnmapMemory(RenderContext.getAllocator(), this.allocation);
+            Vma.vmaUnmapMemory(Mocha2D.RENDER_CONTEXT.getAllocator(), this.allocation);
         }
 
-        Vma.vmaDestroyBuffer(RenderContext.getAllocator(), this.buffer, this.allocation);
+        Vma.vmaDestroyBuffer(Mocha2D.RENDER_CONTEXT.getAllocator(), this.buffer, this.allocation);
     }
 }

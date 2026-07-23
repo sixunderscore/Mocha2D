@@ -1,6 +1,6 @@
 package net.sixunderscore.mocha2d.util;
 
-import net.sixunderscore.mocha2d.graphics.Window;
+import net.sixunderscore.mocha2d.Mocha2D;
 
 public class FpsHelper {
     private final boolean windows;
@@ -76,10 +76,10 @@ public class FpsHelper {
 
     public void updateCount() {
         if (this.fpsCountUpdateTimer >= 1f) {
-            this.fpsCount = (int) (1f / Window.getDeltaTime());
+            this.fpsCount = (int) (1f / Mocha2D.WINDOW.getDeltaTime());
             this.fpsCountUpdateTimer = 0;
         } else {
-            this.fpsCountUpdateTimer += Window.getDeltaTime();
+            this.fpsCountUpdateTimer += Mocha2D.WINDOW.getDeltaTime();
         }
     }
 
