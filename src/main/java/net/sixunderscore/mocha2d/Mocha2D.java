@@ -26,10 +26,6 @@ public class Mocha2D {
 
         WINDOW.loop();
 
-        cleanUp();
-    }
-
-    private static void cleanUp() {
         WINDOW.close();
         RENDER_CONTEXT.close();
     }
