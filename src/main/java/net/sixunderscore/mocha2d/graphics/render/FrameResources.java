@@ -9,12 +9,11 @@ import net.sixunderscore.mocha2d.graphics.util.*;
 import org.joml.Matrix2f;
 import org.joml.Matrix4f;
 import org.lwjgl.system.MemoryStack;
+import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.util.vma.Vma;
 import org.lwjgl.vulkan.*;
 
 public class FrameResources implements AutoCloseable {
-    private static final jdk.internal.misc.Unsafe UNSAFE = jdk.internal.misc.Unsafe.getUnsafe();
-
     private final CommandPool commandPool;
     private final VkCommandBuffer commandBuffer;
 
@@ -96,12 +95,12 @@ public class FrameResources implements AutoCloseable {
 
         long ptr = this.mappedTransformBuffer + this.transformWriteOffset;
 
-        UNSAFE.putFloat(ptr, m00); ptr += Float.BYTES;
-        UNSAFE.putFloat(ptr, m10); ptr += Float.BYTES;
-        UNSAFE.putFloat(ptr, m01); ptr += Float.BYTES;
-        UNSAFE.putFloat(ptr, m11); ptr += Float.BYTES;
-        UNSAFE.putFloat(ptr, originX); ptr += Float.BYTES;
-        UNSAFE.putFloat(ptr, originY);
+        MemoryUtil.memPutFloat(ptr, m00); ptr += Float.BYTES;
+        MemoryUtil.memPutFloat(ptr, m10); ptr += Float.BYTES;
+        MemoryUtil.memPutFloat(ptr, m01); ptr += Float.BYTES;
+        MemoryUtil.memPutFloat(ptr, m11); ptr += Float.BYTES;
+        MemoryUtil.memPutFloat(ptr, originX); ptr += Float.BYTES;
+        MemoryUtil.memPutFloat(ptr, originY);
 
         this.transformWriteOffset += (6 * Float.BYTES);
 
@@ -115,10 +114,10 @@ public class FrameResources implements AutoCloseable {
 
         long ptr = this.mappedTintBuffer + this.tintWriteOffset;
 
-        UNSAFE.putFloat(ptr, ColorUtils.srgbToLinear(r)); ptr += Float.BYTES;
-        UNSAFE.putFloat(ptr, ColorUtils.srgbToLinear(g)); ptr += Float.BYTES;
-        UNSAFE.putFloat(ptr, ColorUtils.srgbToLinear(b)); ptr += Float.BYTES;
-        UNSAFE.putFloat(ptr, a);
+        MemoryUtil.memPutFloat(ptr, ColorUtils.srgbToLinear(r)); ptr += Float.BYTES;
+        MemoryUtil.memPutFloat(ptr, ColorUtils.srgbToLinear(g)); ptr += Float.BYTES;
+        MemoryUtil.memPutFloat(ptr, ColorUtils.srgbToLinear(b)); ptr += Float.BYTES;
+        MemoryUtil.memPutFloat(ptr, a);
 
         this.tintWriteOffset += (4 * Float.BYTES);
 
@@ -134,12 +133,12 @@ public class FrameResources implements AutoCloseable {
         long indexPtr = this.mappedIndexBuffer + this.indexWriteOffset;
         short currentBase = (short) this.indexOffset;
 
-        UNSAFE.putShort(indexPtr, currentBase); indexPtr += Short.BYTES;
-        UNSAFE.putShort(indexPtr, (short) (currentBase + 1)); indexPtr += Short.BYTES;
-        UNSAFE.putShort(indexPtr, (short) (currentBase + 2)); indexPtr += Short.BYTES;
-        UNSAFE.putShort(indexPtr, (short) (currentBase + 1)); indexPtr += Short.BYTES;
-        UNSAFE.putShort(indexPtr, (short) (currentBase + 3)); indexPtr += Short.BYTES;
-        UNSAFE.putShort(indexPtr, (short) (currentBase + 2));
+        MemoryUtil.memPutShort(indexPtr, currentBase); indexPtr += Short.BYTES;
+        MemoryUtil.memPutShort(indexPtr, (short) (currentBase + 1)); indexPtr += Short.BYTES;
+        MemoryUtil.memPutShort(indexPtr, (short) (currentBase + 2)); indexPtr += Short.BYTES;
+        MemoryUtil.memPutShort(indexPtr, (short) (currentBase + 1)); indexPtr += Short.BYTES;
+        MemoryUtil.memPutShort(indexPtr, (short) (currentBase + 3)); indexPtr += Short.BYTES;
+        MemoryUtil.memPutShort(indexPtr, (short) (currentBase + 2));
 
         this.indexWriteOffset += (6 * Short.BYTES);
         this.indexOffset += 4;
@@ -150,37 +149,37 @@ public class FrameResources implements AutoCloseable {
         int transformIdx = Math.clamp(transformIndex, 0, this.transformIndex - 1);
         int tintIdx = Math.clamp(tintIndex, 0, this.tintIndex - 1);
 
-        UNSAFE.putFloat(vertexPtr, bottomLeftX); vertexPtr += Float.BYTES;
-        UNSAFE.putFloat(vertexPtr, bottomLeftY); vertexPtr += Float.BYTES;
-        UNSAFE.putFloat(vertexPtr, texture.topLeftU()); vertexPtr += Float.BYTES;
-        UNSAFE.putFloat(vertexPtr, texture.topLeftV()); vertexPtr += Float.BYTES;
-        UNSAFE.putFloat(vertexPtr, texIdx); vertexPtr += Float.BYTES;
-        UNSAFE.putFloat(vertexPtr, transformIdx); vertexPtr += Float.BYTES;
-        UNSAFE.putFloat(vertexPtr, tintIdx); vertexPtr += Float.BYTES;
+        MemoryUtil.memPutFloat(vertexPtr, bottomLeftX); vertexPtr += Float.BYTES;
+        MemoryUtil.memPutFloat(vertexPtr, bottomLeftY); vertexPtr += Float.BYTES;
+        MemoryUtil.memPutFloat(vertexPtr, texture.topLeftU()); vertexPtr += Float.BYTES;
+        MemoryUtil.memPutFloat(vertexPtr, texture.topLeftV()); vertexPtr += Float.BYTES;
+        MemoryUtil.memPutFloat(vertexPtr, texIdx); vertexPtr += Float.BYTES;
+        MemoryUtil.memPutFloat(vertexPtr, transformIdx); vertexPtr += Float.BYTES;
+        MemoryUtil.memPutFloat(vertexPtr, tintIdx); vertexPtr += Float.BYTES;
 
-        UNSAFE.putFloat(vertexPtr, bottomRightX); vertexPtr += Float.BYTES;
-        UNSAFE.putFloat(vertexPtr, bottomRightY); vertexPtr += Float.BYTES;
-        UNSAFE.putFloat(vertexPtr, texture.topRightU()); vertexPtr += Float.BYTES;
-        UNSAFE.putFloat(vertexPtr, texture.topRightV()); vertexPtr += Float.BYTES;
-        UNSAFE.putFloat(vertexPtr, texIdx); vertexPtr += Float.BYTES;
-        UNSAFE.putFloat(vertexPtr, transformIdx); vertexPtr += Float.BYTES;
-        UNSAFE.putFloat(vertexPtr, tintIdx); vertexPtr += Float.BYTES;
+        MemoryUtil.memPutFloat(vertexPtr, bottomRightX); vertexPtr += Float.BYTES;
+        MemoryUtil.memPutFloat(vertexPtr, bottomRightY); vertexPtr += Float.BYTES;
+        MemoryUtil.memPutFloat(vertexPtr, texture.topRightU()); vertexPtr += Float.BYTES;
+        MemoryUtil.memPutFloat(vertexPtr, texture.topRightV()); vertexPtr += Float.BYTES;
+        MemoryUtil.memPutFloat(vertexPtr, texIdx); vertexPtr += Float.BYTES;
+        MemoryUtil.memPutFloat(vertexPtr, transformIdx); vertexPtr += Float.BYTES;
+        MemoryUtil.memPutFloat(vertexPtr, tintIdx); vertexPtr += Float.BYTES;
 
-        UNSAFE.putFloat(vertexPtr, topLeftX); vertexPtr += Float.BYTES;
-        UNSAFE.putFloat(vertexPtr, topLeftY); vertexPtr += Float.BYTES;
-        UNSAFE.putFloat(vertexPtr, texture.bottomLeftU()); vertexPtr += Float.BYTES;
-        UNSAFE.putFloat(vertexPtr, texture.bottomLeftV()); vertexPtr += Float.BYTES;
-        UNSAFE.putFloat(vertexPtr, texIdx); vertexPtr += Float.BYTES;
-        UNSAFE.putFloat(vertexPtr, transformIdx); vertexPtr += Float.BYTES;
-        UNSAFE.putFloat(vertexPtr, tintIdx); vertexPtr += Float.BYTES;
+        MemoryUtil.memPutFloat(vertexPtr, topLeftX); vertexPtr += Float.BYTES;
+        MemoryUtil.memPutFloat(vertexPtr, topLeftY); vertexPtr += Float.BYTES;
+        MemoryUtil.memPutFloat(vertexPtr, texture.bottomLeftU()); vertexPtr += Float.BYTES;
+        MemoryUtil.memPutFloat(vertexPtr, texture.bottomLeftV()); vertexPtr += Float.BYTES;
+        MemoryUtil.memPutFloat(vertexPtr, texIdx); vertexPtr += Float.BYTES;
+        MemoryUtil.memPutFloat(vertexPtr, transformIdx); vertexPtr += Float.BYTES;
+        MemoryUtil.memPutFloat(vertexPtr, tintIdx); vertexPtr += Float.BYTES;
 
-        UNSAFE.putFloat(vertexPtr, topRightX); vertexPtr += Float.BYTES;
-        UNSAFE.putFloat(vertexPtr, topRightY); vertexPtr += Float.BYTES;
-        UNSAFE.putFloat(vertexPtr, texture.bottomRightU()); vertexPtr += Float.BYTES;
-        UNSAFE.putFloat(vertexPtr, texture.bottomRightV()); vertexPtr += Float.BYTES;
-        UNSAFE.putFloat(vertexPtr, texIdx); vertexPtr += Float.BYTES;
-        UNSAFE.putFloat(vertexPtr, transformIdx); vertexPtr += Float.BYTES;
-        UNSAFE.putFloat(vertexPtr, tintIdx);
+        MemoryUtil.memPutFloat(vertexPtr, topRightX); vertexPtr += Float.BYTES;
+        MemoryUtil.memPutFloat(vertexPtr, topRightY); vertexPtr += Float.BYTES;
+        MemoryUtil.memPutFloat(vertexPtr, texture.bottomRightU()); vertexPtr += Float.BYTES;
+        MemoryUtil.memPutFloat(vertexPtr, texture.bottomRightV()); vertexPtr += Float.BYTES;
+        MemoryUtil.memPutFloat(vertexPtr, texIdx); vertexPtr += Float.BYTES;
+        MemoryUtil.memPutFloat(vertexPtr, transformIdx); vertexPtr += Float.BYTES;
+        MemoryUtil.memPutFloat(vertexPtr, tintIdx);
 
         this.vertexWriteOffset += (28 * Float.BYTES);
     }
