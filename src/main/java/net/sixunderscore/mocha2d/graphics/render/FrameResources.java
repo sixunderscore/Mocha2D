@@ -4,10 +4,8 @@ import net.sixunderscore.mocha2d.Mocha2D;
 import net.sixunderscore.mocha2d.graphics.util.OrthographicCamera;
 import net.sixunderscore.mocha2d.graphics.resources.ResourceManager;
 import net.sixunderscore.mocha2d.graphics.resources.textures.TextureRegion;
-import net.sixunderscore.mocha2d.util.ColorUtils;
+import net.sixunderscore.mocha2d.util.MiscUtils;
 import net.sixunderscore.mocha2d.graphics.util.*;
-import org.joml.Matrix2f;
-import org.joml.Matrix4f;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.util.vma.Vma;
@@ -50,7 +48,7 @@ public class FrameResources implements AutoCloseable {
 
         int indexBufferSizeBytes = maxIndices * Short.BYTES;
         int vertexBufferSizeBytes = maxVertices * VertexData.TOTAL_SIZE_BYTES;
-        int transformBufferSizeBytes = this.maxQuads * (Matrix2f.BYTES + Float.BYTES * 2);
+        int transformBufferSizeBytes = this.maxQuads * (MiscUtils.MATRIX_2F_BYTES + Float.BYTES * 2);
         int tintBufferSizeBytes = this.maxQuads * (Float.BYTES * 4);
 
         this.writtenQuads = 0;
@@ -114,9 +112,9 @@ public class FrameResources implements AutoCloseable {
 
         long ptr = this.mappedTintBuffer + this.tintWriteOffset;
 
-        MemoryUtil.memPutFloat(ptr, ColorUtils.srgbToLinear(r)); ptr += Float.BYTES;
-        MemoryUtil.memPutFloat(ptr, ColorUtils.srgbToLinear(g)); ptr += Float.BYTES;
-        MemoryUtil.memPutFloat(ptr, ColorUtils.srgbToLinear(b)); ptr += Float.BYTES;
+        MemoryUtil.memPutFloat(ptr, MiscUtils.srgbToLinearColor(r)); ptr += Float.BYTES;
+        MemoryUtil.memPutFloat(ptr, MiscUtils.srgbToLinearColor(g)); ptr += Float.BYTES;
+        MemoryUtil.memPutFloat(ptr, MiscUtils.srgbToLinearColor(b)); ptr += Float.BYTES;
         MemoryUtil.memPutFloat(ptr, a);
 
         this.tintWriteOffset += (4 * Float.BYTES);
@@ -210,9 +208,9 @@ public class FrameResources implements AutoCloseable {
                 .pImageMemoryBarriers(imageBarrier);
         VK14.vkCmdPipelineBarrier2(this.commandBuffer, barrierDependencyInfo);
 
-        VK14.vkCmdPushConstants(this.commandBuffer, pipeline.getLayout(), VK14.VK_SHADER_STAGE_VERTEX_BIT, 0, camera.getBuffer());
-        VK14.vkCmdPushConstants(this.commandBuffer, pipeline.getLayout(), VK14.VK_SHADER_STAGE_VERTEX_BIT, Matrix4f.BYTES, stack.longs(this.transformBufferAddress));
-        VK14.vkCmdPushConstants(this.commandBuffer, pipeline.getLayout(), VK14.VK_SHADER_STAGE_FRAGMENT_BIT, Matrix4f.BYTES + 8, stack.longs(this.tintBufferAddress));
+        VK14.nvkCmdPushConstants(this.commandBuffer, pipeline.getLayout(), VK14.VK_SHADER_STAGE_VERTEX_BIT, 0, MiscUtils.MATRIX_4F_BYTES, camera.getMatrixPointer());
+        VK14.vkCmdPushConstants(this.commandBuffer, pipeline.getLayout(), VK14.VK_SHADER_STAGE_VERTEX_BIT, MiscUtils.MATRIX_4F_BYTES, stack.longs(this.transformBufferAddress));
+        VK14.vkCmdPushConstants(this.commandBuffer, pipeline.getLayout(), VK14.VK_SHADER_STAGE_FRAGMENT_BIT, MiscUtils.MATRIX_4F_BYTES + 8, stack.longs(this.tintBufferAddress));
 
         VkClearValue clearValue = VkClearValue.calloc(stack).color(clearColorValue);
         VkRenderingAttachmentInfo.Buffer colorAttachments = VkRenderingAttachmentInfo.calloc(1, stack);
@@ -292,7 +290,7 @@ public class FrameResources implements AutoCloseable {
         this.indexWriteOffset = 0;
         this.indexOffset = 0;
 
-        this.transformWriteOffset = Matrix2f.BYTES + Float.BYTES * 2;
+        this.transformWriteOffset = MiscUtils.MATRIX_2F_BYTES + Float.BYTES * 2;
         this.transformIndex = 1;
 
         this.tintWriteOffset = Float.BYTES * 4;

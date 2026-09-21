@@ -5,7 +5,7 @@ import net.sixunderscore.mocha2d.graphics.resources.ResourceManager;
 import net.sixunderscore.mocha2d.graphics.resources.text.BitmapFont;
 import net.sixunderscore.mocha2d.graphics.resources.text.GlyphData;
 import net.sixunderscore.mocha2d.graphics.resources.textures.TextureRegion;
-import net.sixunderscore.mocha2d.util.ColorUtils;
+import net.sixunderscore.mocha2d.util.MiscUtils;
 import net.sixunderscore.mocha2d.util.MathUtils;
 import net.sixunderscore.mocha2d.graphics.util.*;
 import net.sixunderscore.mocha2d.graphics.util.OrthographicCamera;
@@ -224,9 +224,9 @@ public class BatchRenderer implements AutoCloseable {
 
     public void setClearColor(byte r, byte g, byte b) {
         this.clearColor
-                .float32(0, ColorUtils.srgbToLinear(r))
-                .float32(1, ColorUtils.srgbToLinear(g))
-                .float32(2, ColorUtils.srgbToLinear(b));
+                .float32(0, MiscUtils.srgbToLinearColor(r))
+                .float32(1, MiscUtils.srgbToLinearColor(g))
+                .float32(2, MiscUtils.srgbToLinearColor(b));
     }
 
     @Override

@@ -1,48 +1,42 @@
 package net.sixunderscore.mocha2d.graphics.util;
 
 import net.sixunderscore.mocha2d.Mocha2D;
-import org.joml.Matrix4f;
+import net.sixunderscore.mocha2d.util.MiscUtils;
 import org.lwjgl.system.MemoryUtil;
 
-import java.nio.FloatBuffer;
-
 public class OrthographicCamera implements AutoCloseable {
-    private final Matrix4f projectionViewMatrix;
-    private final FloatBuffer projectionViewBuffer;
+    private final long matrixPtr;
 
     public OrthographicCamera(float initialWindowWidth, float initialWindowHeight) {
-        this.projectionViewMatrix = new Matrix4f();
-        this.projectionViewBuffer = MemoryUtil.memAllocFloat(16);
-
+        this.matrixPtr = MemoryUtil.nmemAllocChecked(MiscUtils.MATRIX_4F_BYTES);
         this.adjustProjection(initialWindowWidth, initialWindowHeight);
     }
 
     private void adjustProjection(float windowWidth, float windowHeight) {
-        this.projectionViewMatrix
-                .identity()
-                .ortho(
-                        0, windowWidth,
-                        windowHeight, 0,
-                        0.1f, 100, true
-                ).lookAt(
-                        0, 0, 20f,
-                        0, 0, 0f,
-                        0, 1f, 0
-                );
+        MemoryUtil.memSet(this.matrixPtr, 0, MiscUtils.MATRIX_4F_BYTES);
 
-        this.projectionViewMatrix.get(this.projectionViewBuffer);
+        float m22 =  1.0f / (0.1f - 100f);
+        float m32 =  0.1f / (0.1f - 100f) + m22 * (-20f);
+
+        MemoryUtil.memPutFloat(this.matrixPtr, 2.0f / windowWidth); // m00
+        MemoryUtil.memPutFloat(this.matrixPtr+  5 * Float.BYTES, -2.0f / windowHeight); // m11
+        MemoryUtil.memPutFloat(this.matrixPtr+ 10 * Float.BYTES, m22); // m22
+        MemoryUtil.memPutFloat(this.matrixPtr+ 12 * Float.BYTES, -1.0f); // m30
+        MemoryUtil.memPutFloat(this.matrixPtr+ 13 * Float.BYTES, 1.0f); // m31
+        MemoryUtil.memPutFloat(this.matrixPtr+ 14 * Float.BYTES, m32); // m32
+        MemoryUtil.memPutFloat(this.matrixPtr+ 15 * Float.BYTES, 1.0f); // m33
     }
 
     public void adjustProjection() {
         this.adjustProjection(Mocha2D.WINDOW.getWidth(), Mocha2D.WINDOW.getHeight());
     }
 
-    public FloatBuffer getBuffer() {
-        return this.projectionViewBuffer;
+    public long getMatrixPointer() {
+        return this.matrixPtr;
     }
 
     @Override
     public void close() {
-        MemoryUtil.memFree(this.projectionViewBuffer);
+        MemoryUtil.nmemFree(this.matrixPtr);
     }
 }

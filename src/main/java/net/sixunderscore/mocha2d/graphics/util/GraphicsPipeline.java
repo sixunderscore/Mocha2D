@@ -3,8 +3,8 @@ package net.sixunderscore.mocha2d.graphics.util;
 import net.sixunderscore.mocha2d.Mocha2D;
 import net.sixunderscore.mocha2d.graphics.render.VertexData;
 import net.sixunderscore.mocha2d.graphics.resources.ResourceManager;
+import net.sixunderscore.mocha2d.util.MiscUtils;
 import net.sixunderscore.mocha2d.util.ResourceUtils;
-import org.joml.Matrix4f;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.*;
 
@@ -22,8 +22,8 @@ public class GraphicsPipeline implements AutoCloseable {
 
     private long createPipelineLayout(MemoryStack stack, ResourceManager resourceManager) {
         VkPushConstantRange.Buffer pushConstantRanges = VkPushConstantRange.calloc(2, stack);
-        pushConstantRanges.get(0).set(VK14.VK_SHADER_STAGE_VERTEX_BIT, 0, Matrix4f.BYTES + 8);
-        pushConstantRanges.get(1).set(VK14.VK_SHADER_STAGE_FRAGMENT_BIT, Matrix4f.BYTES + 8, 8);
+        pushConstantRanges.get(0).set(VK14.VK_SHADER_STAGE_VERTEX_BIT, 0, MiscUtils.MATRIX_4F_BYTES + 8);
+        pushConstantRanges.get(1).set(VK14.VK_SHADER_STAGE_FRAGMENT_BIT, MiscUtils.MATRIX_4F_BYTES + 8, 8);
 
         VkPipelineLayoutCreateInfo layoutCreateInfo = VkPipelineLayoutCreateInfo.calloc(stack)
                 .sType$Default()
