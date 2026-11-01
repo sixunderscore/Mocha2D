@@ -14,6 +14,7 @@ public class Window implements AutoCloseable {
     private int width;
     private int height;
     private float displayScale;
+    private boolean shouldRender;
     private RenderSystem renderSystem;
     private Screen screen;
     private final OrthographicCamera camera;
@@ -41,6 +42,7 @@ public class Window implements AutoCloseable {
         }
 
         this.displayScale = SDLVideo.SDL_GetWindowDisplayScale(this.window);
+        this.shouldRender = true;
 
         this.setIcon(settings.getWindowIconPath());
 
@@ -64,13 +66,21 @@ public class Window implements AutoCloseable {
         SDL_Event event = SDL_Event.malloc();
 
         while (running) {
-            this.deltaTime.update();
-            this.fpsHelper.updateCount();
-
-            if (!handleInput(event)) {
+            if (!handleEvents(event)) {
                 running = false;
                 continue;
             }
+
+            if (!this.shouldRender) {
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException _) {
+                }
+                continue;
+            }
+
+            this.deltaTime.update();
+            this.fpsHelper.updateCount();
 
             this.renderSystem.render(this.screen, this.camera);
 
@@ -80,12 +90,14 @@ public class Window implements AutoCloseable {
         event.free();
     }
 
-    private boolean handleInput(SDL_Event event) {
+    private boolean handleEvents(SDL_Event event) {
         while (SDLEvents.SDL_PollEvent(event)) {
             switch (event.type()) {
                 case SDLEvents.SDL_EVENT_QUIT -> {
                     return false;
                 }
+                case SDLEvents.SDL_EVENT_WINDOW_OCCLUDED -> this.shouldRender = false;
+                case SDLEvents.SDL_EVENT_WINDOW_EXPOSED -> this.shouldRender = true;
                 case SDLEvents.SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED -> {
                     SDL_WindowEvent window = event.window();
                     this.width = window.data1();
